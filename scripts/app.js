@@ -17,8 +17,8 @@
   };
 
   // ─── ORIGIN POINT (private - never shown to users) ───
-  const ORIGIN_LAT = -36.8270;
-  const ORIGIN_LNG = -73.0498;
+  const ORIGIN_LAT = -36.79213;
+  const ORIGIN_LNG = -73.05781;
 
   // ─── DELIVERY ZONES ───
   // 0-5km: Free | 5.01-8km: $1,500 (free ≥2 units) | 8.01-15km: $3,000 (free ≥3 units) | >15km: No delivery
