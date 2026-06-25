@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lomas & Drinks — Cocktails Listos para Disfrutar | Concepción</title>
+  <meta name="description" content="Cocktails preparados premium listos para disfrutar. Tropiconce y Pink Fantasy: sabores únicos con entrega en Concepción. ¡Compra ahora!">
+  <meta name="keywords" content="cocktails preparados, tragos listos, Concepción, Chile, delivery cocktails, Lomas Drinks">
+  <meta property="og:title" content="Lomas & Drinks — Cocktails Listos para Disfrutar">
+  <meta property="og:description" content="Sabores únicos preparados para transformar cualquier noche. Entrega en Concepción.">
+  <meta property="og:image" content="assets/images/hero.png">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  
+  <!-- Google Analytics Placeholder -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    "name": "Lomas & Drinks",
+    "description": "Cocktails preparados premium con entrega en Concepción",
+    "address": {"@type": "PostalAddress", "addressLocality": "Concepción", "addressCountry": "CL"},
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Cocktails",
+      "itemListElement": [
+        {"@type": "Product", "name": "Tropiconce", "offers": {"@type": "Offer", "price": "10000", "priceCurrency": "CLP", "availability": "https://schema.org/InStock"}},
+        {"@type": "Product", "name": "Pink Fantasy", "offers": {"@type": "Offer", "price": "10000", "priceCurrency": "CLP", "availability": "https://schema.org/InStock"}}
+      ]
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ============ PROMO BANNER ============ -->
+  <div class="promo-banner" id="promoBanner">
+    <div class="promo-banner-content">
+      <span>🎉 <strong>ENVÍO GRATIS</strong> comprando +2 unidades · Concepción y alrededores (hasta 8km)</span>
+      <button class="promo-banner-close" onclick="this.parentElement.parentElement.style.display='none'" aria-label="Cerrar">&times;</button>
+    </div>
+  </div>
+
+  <!-- ============ STORE STATUS BANNER ============ -->
+  <div class="status-banner" id="storeStatusBanner" style="display: none;">
+    <div class="status-banner-content">
+      <span>🔴 <strong>TIENDA CERRADA</strong> — Abriremos a las 20:00 hrs. ¡Puedes programar tu pedido ahora!</span>
+      <button class="status-banner-close" onclick="this.parentElement.parentElement.style.display='none'" aria-label="Cerrar">&times;</button>
+    </div>
+  </div>
+
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="nav-logo"><img src="assets/images/logo.png" alt="Lomas & Drinks" class="logo-img"></a>
+      <div class="nav-links" id="navLinks">
+        <a href="#productos" class="nav-link">Sabores</a>
+        <a href="#por-que" class="nav-link">Nosotros</a>
+        <a href="#galeria" class="nav-link">Galería</a>
+        <a href="#contacto" class="nav-link">Contacto</a>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <button class="nav-cart-btn nav-track-btn" id="trackOrderToggle" aria-label="Ver mi pedido" style="display:none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span style="font-size:0.8rem;font-weight:600;">Mi Pedido</span>
+        </button>
+        <button class="nav-cart-btn" id="cartToggle" aria-label="Abrir carrito">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-badge" id="cartBadge">0</span>
+        </button>
+        <button class="nav-mobile-toggle" id="mobileToggle" aria-label="Menú">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+
+
+  <!-- ============ HERO SECTION ============ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <img src="assets/images/hero.png" alt="Cocktails Lomas & Drinks" loading="eager">
+    </div>
+    <!-- Particles overlay -->
+    <div class="hero-particles">
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+      <div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    </div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          ✦ Premium Cocktails — Concepción
+        </div>
+        <h1 class="hero-title">
+          Cocktails listos<br>para <span class="highlight">disfrutar.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Sabores únicos preparados para transformar cualquier noche. Pide ahora y recibe en tu puerta.
+        </p>
+        <div class="hero-ctas">
+          <a href="#productos" class="btn btn-primary btn-lg btn-glow" id="heroCTA">
+            🍸 COMPRAR AHORA
+          </a>
+          <a href="#productos" class="btn btn-secondary btn-lg">
+            VER SABORES
+          </a>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-item"><span class="check">✓</span> Compra rápida</div>
+          <div class="trust-item"><span class="check">✓</span> Pago seguro</div>
+          <div class="trust-item"><span class="check">✓</span> Entrega en Concepción</div>
+        </div>
+        <div class="hero-urgency">
+          <span class="urgency-dot"></span>
+          <span class="viewer-count">14</span> personas viendo esto ahora
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FREE SHIPPING BANNER ============ -->
+  <div class="shipping-banner">
+    <div class="container">
+      <div class="shipping-banner-grid">
+        <div class="shipping-banner-item">
+          <span>🚚</span>
+          <div><strong>Envío GRATIS</strong><small>hasta 5km</small></div>
+        </div>
+        <div class="shipping-banner-item">
+          <span>🎉</span>
+          <div><strong>+2 cocktails = Envío Gratis</strong><small>hasta 8km</small></div>
+        </div>
+        <div class="shipping-banner-item">
+          <span>⚡</span>
+          <div><strong>Entrega rápida</strong><small>en Concepción</small></div>
+        </div>
+        <div class="shipping-banner-item">
+          <span>💳</span>
+          <div><strong>Pago seguro</strong><small>Flow o Transferencia</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HERO CAROUSEL ============ -->
+  <div class="hero-carousel" id="mainCarousel">
+    <div class="carousel-track-container">
+      <div class="carousel-track" id="carouselTrack">
+        
+        <!-- Slide 1 -->
+        <div class="carousel-slide current-slide">
+          <img src="assets/images/banner_cocktails.png" alt="Cocktails" loading="eager">
+          <div class="carousel-overlay">
+            <div class="carousel-caption">
+              <h2>Cocktails Premium</h2>
+              <p>Disponibles hasta la 01:00 AM</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="carousel-slide">
+          <img src="assets/images/banner_bottles.png" alt="Licores" loading="lazy">
+          <div class="carousel-overlay">
+            <div class="carousel-caption">
+              <h2>Tus Marcas Favoritas</h2>
+              <p>Botellas y Promociones Especiales</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="carousel-slide">
+          <img src="assets/images/banner_party.png" alt="Sabor & Fiesta" loading="lazy">
+          <div class="carousel-overlay">
+            <div class="carousel-caption">
+              <h2>Previa & After</h2>
+              <p>Los mejores cócteles para tus mejores momentos</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+    <button class="carousel-btn prev" id="carouselPrev" aria-label="Anterior">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <button class="carousel-btn next" id="carouselNext" aria-label="Siguiente">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+
+    <div class="carousel-nav" id="carouselNav">
+      <button class="carousel-indicator current-slide" aria-label="Slide 1"></button>
+      <button class="carousel-indicator" aria-label="Slide 2"></button>
+      <button class="carousel-indicator" aria-label="Slide 3"></button>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCTS SECTION ============ -->
+  <section class="products section" id="productos">
+    <div class="container">
+      <div class="day-only">
+        <h2 class="section-title">Nuestros <span class="gold-text">Sabores</span></h2>
+        <div class="gold-line"></div>
+        <p class="section-subtitle">Cocktails preparados con ingredientes seleccionados, listos para servir y disfrutar.</p>
+      </div>
+
+      <div class="late-night-only" style="text-align: center;">
+        <h2 class="section-title">Tu <span class="gold-text">Rescate</span></h2>
+        <div class="gold-line"></div>
+        <p class="section-subtitle">Nuestro escuadrón está activo y listo para entrar en acción. Cuando la ciudad duerme, nosotros llevamos la celebración directo a tu puerta.</p>
+      </div>
+
+      <div class="products-grid">
+        <!-- TROPICONCE (Day Only) -->
+        <div class="product-card day-only animate-on-scroll" data-product-id="tropiconce">
+          <div class="product-image-wrapper">
+            <img src="assets/images/tropiconce.png" alt="Tropiconce - Cocktail Tropical" loading="lazy">
+            <span class="product-tag">🌴 Tropical</span>
+            <span class="product-badge-hot">🚀 OFERTA LANZAMIENTO</span>
+          </div>
+          <div class="product-info">
+            <div class="product-social-proof">
+              <span class="urgency-dot-sm"></span> <span class="viewer-count">12</span> personas viendo esto
+            </div>
+            <h3 class="product-name">Tropiconce</h3>
+            <p class="product-desc">
+              <strong>Coctelería de autor - Tropical Gin:</strong> Explosión tropical con base de Gin, sabores de mango, maracuyá y un toque cítrico que te transporta al paraíso. Refrescante, vibrante y adictivo.
+            </p>
+            <div class="product-option-row" style="margin-bottom: 0.75rem;">
+              <label class="form-label" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block; text-align: left; font-weight: 700;">PREPARACIÓN:</label>
+              <select class="energy-select" data-target="tropiconce" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-subtle); font-size: 0.85rem; font-weight: 500; outline: none; cursor: pointer; transition: border-color var(--transition-fast);">
+                <option value="sin-energetica">Sin Energética</option>
+                <option value="con-energetica">Con Energética</option>
+              </select>
+            </div>
+            <div class="product-price-row">
+              <div class="product-price">
+                <span class="currency">$</span>9.990
+                <span style="text-decoration: line-through; color: var(--text-muted); font-size: 1.1rem; margin-left: 8px; font-weight: 500;">$11.990</span>
+              </div>
+              <span class="product-volume" style="font-size:0.8rem;color:var(--orange);">¡Hasta agotar stock!</span>
+            </div>
+            <div class="product-delivery-hint">🚚 Envío gratis comprando +2</div>
+            <div class="product-price-row">
+              <div class="quantity-selector">
+                <button class="qty-btn" data-action="decrease" data-target="qty-tropiconce" aria-label="Reducir cantidad">−</button>
+                <input type="text" class="qty-value" id="qty-tropiconce" value="1" readonly>
+                <button class="qty-btn" data-action="increase" data-target="qty-tropiconce" aria-label="Aumentar cantidad">+</button>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-add-cart btn-glow" data-product="tropiconce" data-name="Tropiconce" data-price="9990" data-image="assets/images/tropiconce.png">
+                🛒 AGREGAR AL CARRITO
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PINK FANTASY (Day Only) -->
+        <div class="product-card day-only animate-on-scroll" data-product-id="pink-fantasy">
+          <div class="product-image-wrapper">
+            <img src="assets/images/pink_fantasy.png" alt="Pink Fantasy - Cocktail Rosado" loading="lazy">
+            <span class="product-tag">🌸 Fantasy</span>
+            <span class="product-badge-hot" style="background:linear-gradient(135deg,#e91e8c,#ff4da6);">🚀 OFERTA LANZAMIENTO</span>
+          </div>
+          <div class="product-info">
+            <div class="product-social-proof">
+              <span class="urgency-dot-sm"></span> <span class="viewer-count">9</span> personas viendo esto
+            </div>
+            <h3 class="product-name">Pink Fantasy</h3>
+            <p class="product-desc">
+              <strong>Coctelería de autor - Gin + Berries:</strong> Elegancia en rosa con base de Gin y frutos rojos (fresa, frambuesa) y un delicado toque floral. Suave, sofisticado y perfecto para momentos especiales.
+            </p>
+            <div class="product-option-row" style="margin-bottom: 0.75rem;">
+              <label class="form-label" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.25rem; display: block; text-align: left; font-weight: 700;">PREPARACIÓN:</label>
+              <select class="energy-select" data-target="pink-fantasy" style="width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-subtle); font-size: 0.85rem; font-weight: 500; outline: none; cursor: pointer; transition: border-color var(--transition-fast);">
+                <option value="sin-energetica">Sin Energética</option>
+                <option value="con-energetica">Con Energética</option>
+              </select>
+            </div>
+            <div class="product-price-row">
+              <div class="product-price">
+                <span class="currency">$</span>9.990
+                <span style="text-decoration: line-through; color: var(--text-muted); font-size: 1.1rem; margin-left: 8px; font-weight: 500;">$11.990</span>
+              </div>
+              <span class="product-volume" style="font-size:0.8rem;color:var(--orange);">¡Hasta agotar stock!</span>
+            </div>
+            <div class="product-delivery-hint">🚚 Envío gratis comprando +2</div>
+            <div class="product-price-row">
+              <div class="quantity-selector">
+                <button class="qty-btn" data-action="decrease" data-target="qty-pink-fantasy" aria-label="Reducir cantidad">−</button>
+                <input type="text" class="qty-value" id="qty-pink-fantasy" value="1" readonly>
+                <button class="qty-btn" data-action="increase" data-target="qty-pink-fantasy" aria-label="Aumentar cantidad">+</button>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-add-cart btn-glow" data-product="pink-fantasy" data-name="Pink Fantasy" data-price="9990" data-image="assets/images/pink_fantasy.png">
+                🛒 AGREGAR AL CARRITO
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LATE NIGHT PRODUCTS -->
+      <div class="products-grid late-night-only">
+        
+        <!-- PROMO PISCOLA NORMAL -->
+        <div class="product-card animate-on-scroll" data-product-id="promo-piscola">
+          <div class="product-image-wrapper" style="background: transparent;">
+            <img src="assets/images/pisco_normal.png" alt="Promo Piscola Normal" loading="lazy" style="width:100%; height:100%; object-fit:contain; padding: 10px;">
+            <span class="product-tag">🔥 Rescate</span>
+          </div>
+          <div class="product-info">
+            <h3 class="product-name">Promo Piscola Normal</h3>
+            <p class="product-desc">Pisco Mistral o Alto del Carmen (1L) + Bebida (1.5L) + Hielo (1kg). ¡El rescate perfecto!</p>
+            
+            <div class="product-options" style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+              <select class="mixer-select" data-target="promo-piscola" style="width: 100%; padding: 8px; border-radius: 4px; background: var(--bg-primary); color: white; border: 1px solid var(--border-subtle);">
+                <option value="Coca-Cola">Bebida: Coca-Cola</option>
+                <option value="Sprite">Bebida: Sprite</option>
+              </select>
+
+               <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 8px; color: var(--gold); cursor: pointer;">
+                 <input type="checkbox" class="upsell-checkbox" data-target="promo-piscola">
+                 Agrandar bebida a 3L (+$2.000)
+               </label>
+            </div>
+
+            <div class="product-price-row">
+              <div class="product-price"><span class="currency">$</span>20.000</div>
+            </div>
+            <div class="product-price-row">
+              <div class="quantity-selector">
+                <button class="qty-btn" data-action="decrease" data-target="qty-promo-piscola">−</button>
+                <input type="text" class="qty-value" id="qty-promo-piscola" value="1" readonly>
+                <button class="qty-btn" data-action="increase" data-target="qty-promo-piscola">+</button>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-add-cart btn-glow" data-product="promo-piscola" data-name="Promo Piscola Normal" data-price="20000" data-image="assets/images/pisco_normal.png">
+                🛒 PEDIR RESCATE
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROMO PISCOLA MANZANA -->
+        <div class="product-card animate-on-scroll" data-product-id="promo-manzana">
+          <div class="product-image-wrapper" style="background: transparent;">
+            <img src="assets/images/pisco_apple.png" alt="Promo Pisco Manzana" loading="lazy" style="width:100%; height:100%; object-fit:contain; padding: 10px;">
+            <span class="product-tag">🔥 Rescate</span>
+          </div>
+          <div class="product-info">
+            <h3 class="product-name">Promo Pisco Manzana</h3>
+            <p class="product-desc">Pisco Mistral Nobel Apple (750ml) + Bebida (1.5L) + Hielo (1kg). Suave y peligroso.</p>
+            
+            <div class="product-options" style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
+              <select class="mixer-select" data-target="promo-manzana" style="width: 100%; padding: 8px; border-radius: 4px; background: var(--bg-primary); color: white; border: 1px solid var(--border-subtle);">
+                <option value="Sprite">Bebida: Sprite</option>
+                <option value="Coca-Cola">Bebida: Coca-Cola</option>
+              </select>
+
+               <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 8px; color: var(--gold); cursor: pointer;">
+                 <input type="checkbox" class="upsell-checkbox" data-target="promo-manzana">
+                 Agrandar bebida a 3L (+$2.000)
+               </label>
+            </div>
+
+            <div class="product-price-row">
+              <div class="product-price"><span class="currency">$</span>27.000</div>
+            </div>
+            <div class="product-price-row">
+              <div class="quantity-selector">
+                <button class="qty-btn" data-action="decrease" data-target="qty-promo-manzana">−</button>
+                <input type="text" class="qty-value" id="qty-promo-manzana" value="1" readonly>
+                <button class="qty-btn" data-action="increase" data-target="qty-promo-manzana">+</button>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-add-cart btn-glow" data-product="promo-manzana" data-name="Promo Pisco Manzana" data-price="27000" data-image="assets/images/pisco_apple.png">
+                🚨 PEDIR RESCATE
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PACK CERVEZAS -->
+        <div class="product-card animate-on-scroll" data-product-id="pack-escudo">
+          <div class="product-image-wrapper" style="background: transparent;">
+            <img id="beer-image" src="assets/images/escudo.png" alt="Six Pack" loading="lazy" style="width:100%; height:100%; object-fit:contain; padding: 10px;">
+            <span class="product-tag">🍻 Six Packs</span>
+          </div>
+          <div class="product-info">
+            <h3 class="product-name">Six Pack Cervezas</h3>
+            <p class="product-desc">Elige tu cerveza favorita bien helada para continuar la noche.</p>
+            
+            <select id="beer-selector" style="width: 100%; padding: 8px; margin-bottom: 15px; border-radius: 4px; background: var(--bg-primary); color: white; border: 1px solid var(--border-subtle);">
+              <option value="pack-escudo-silver" data-price="7000" data-name="Six Pack Escudo Silver" data-image="assets/images/escudo_silver.png">Escudo Silver ($7.000)</option>
+              <option value="pack-escudo" data-price="9000" data-name="Six Pack Escudo" data-image="assets/images/escudo.png" selected>Escudo Normal ($9.000)</option>
+              <option value="pack-cristal" data-price="9000" data-name="Six Pack Cristal" data-image="assets/images/cristal_real.jpg">Cristal ($9.000)</option>
+              <option value="pack-royal" data-price="10500" data-name="Six Pack Royal Guard" data-image="assets/images/royal_guard.jpg">Royal Guard ($10.500)</option>
+              <option value="pack-heineken" data-price="10500" data-name="Six Pack Heineken" data-image="assets/images/heineken.jpg">Heineken ($10.500)</option>
+            </select>
+
+            <div class="product-price-row">
+              <div class="product-price" id="beer-price-display"><span class="currency">$</span>9.000</div>
+            </div>
+            <div class="product-price-row">
+              <div class="quantity-selector">
+                <button class="qty-btn" data-action="decrease" data-target="qty-pack-cervezas">−</button>
+                <input type="text" class="qty-value" id="qty-pack-cervezas" value="1" readonly>
+                <button class="qty-btn" data-action="increase" data-target="qty-pack-cervezas">+</button>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-add-cart btn-glow" id="btn-add-beer" data-product="pack-escudo" data-name="Six Pack Escudo" data-price="9000" data-image="">
+                🚨 PEDIR CERVEZAS
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- End LATE NIGHT PRODUCTS -->
+
+      <!-- COMBO UPSELL -->
+      <div class="combo-upsell day-only animate-on-scroll">
+        <div class="combo-upsell-glow"></div>
+        <div class="combo-upsell-content">
+          <span class="combo-upsell-badge">💎 OFERTA ESPECIAL</span>
+          <h3>¡Lleva ambos sabores y el envío es <span style="color:#2ecc71;">GRATIS!</span></h3>
+          <p>Compra +2 unidades y disfruta envío gratis en la mayor parte de Concepción.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHY SECTION ============ -->
+  <section class="why-section section" id="por-que">
+    <div class="container">
+      <h2 class="section-title">¿Por qué <span class="gold-text">Lomas & Drinks</span>?</h2>
+      <div class="gold-line"></div>
+      <p class="section-subtitle">Creamos experiencias en cada sorbo. No solo vendemos cocktails, transformamos momentos.</p>
+      <div class="why-grid">
+        <div class="why-card animate-on-scroll"><span class="why-icon">🍸</span><h3>Cocktails Preparados</h3><p>Listos para servir y disfrutar. Sin complicaciones, solo abre y disfruta.</p></div>
+        <div class="why-card animate-on-scroll"><span class="why-icon">✨</span><h3>Sabores Originales</h3><p>Recetas exclusivas creadas para sorprender tu paladar con cada trago.</p></div>
+        <div class="why-card animate-on-scroll"><span class="why-icon">🌿</span><h3>Ingredientes Selectos</h3><p>Solo los mejores ingredientes para garantizar calidad y sabor premium.</p></div>
+        <div class="why-card animate-on-scroll"><span class="why-icon">🎁</span><h3>Presentación Premium</h3><p>Diseño elegante que impresiona. Perfecto para regalar o compartir.</p></div>
+        <div class="why-card animate-on-scroll"><span class="why-icon">⚡</span><h3>Compra Rápida</h3><p>Finaliza tu pedido en menos de 1 minuto. Entrega directa en Concepción.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALLERY SECTION ============ -->
+  <section class="gallery-section section" id="galeria">
+    <div class="container">
+      <h2 class="section-title">Galería <span class="gold-text">Visual</span></h2>
+      <div class="gold-line"></div>
+      <p class="section-subtitle">Cada detalle importa. Desde los ingredientes hasta la presentación final.</p>
+      <div class="gallery-grid">
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/gallery_4.png" alt="Ingredientes tropicales frescos" loading="lazy"></div>
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/tropiconce.png" alt="Tropiconce detalle" loading="lazy"></div>
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/pink_fantasy.png" alt="Pink Fantasy detalle" loading="lazy"></div>
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/gallery_5.png" alt="Preparación cóctel de autor" loading="lazy"></div>
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/gallery_1.png" alt="Ingredientes frescos de coctelería" loading="lazy"></div>
+        <div class="gallery-item animate-on-scroll"><img src="assets/images/gallery_2.png" alt="Detalle de cóctel servido" loading="lazy"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INSTAGRAM SECTION ============ -->
+  <section class="instagram-section section" id="instagram">
+    <div class="container">
+      <h2 class="section-title">Síguenos en <span class="gold-text">Instagram</span></h2>
+      <div class="gold-line"></div>
+      <p class="instagram-handle"><a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener">@lomasndrinks</a></p>
+      <div class="instagram-grid">
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="instagram-post"><img src="assets/images/tropiconce.png" alt="Post 1" loading="lazy"></a>
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="instagram-post"><img src="assets/images/pink_fantasy.png" alt="Post 2" loading="lazy"></a>
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="instagram-post"><img src="assets/images/gallery_1.png" alt="Post 3" loading="lazy"></a>
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="instagram-post"><img src="assets/images/gallery_2.png" alt="Post 4" loading="lazy"></a>
+      </div>
+      <div style="margin-top: 2rem;">
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="btn btn-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          SEGUIR EN INSTAGRAM
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer" id="contacto">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo"><img src="assets/images/logo.png" alt="Lomas & Drinks" class="logo-img"></div>
+        <div class="footer-links">
+          <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="footer-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            @lomasndrinks
+          </a>
+          <a href="https://wa.me/56922303780" target="_blank" rel="noopener" class="footer-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp
+          </a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Lomas & Drinks. Todos los derechos reservados. Concepción, Chile.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ CART SIDEBAR ============ -->
+  <div class="cart-overlay" id="cartOverlay"></div>
+  <aside class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+      <h2>🛒 Tu Carrito</h2>
+      <button class="cart-close" id="cartClose" aria-label="Cerrar carrito">✕</button>
+    </div>
+    <div id="cartUpsell" class="cart-upsell" style="display:none;"></div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer" id="cartFooter" style="display:none;">
+      <div class="cart-totals">
+        <div class="cart-total-row"><span>Subtotal</span><span id="cartSubtotal">$0</span></div>
+        <div class="cart-total-row"><span>Envío</span><span style="color: var(--success);">Se calcula al pagar</span></div>
+        <div class="cart-total-row total"><span>Total</span><span id="cartTotal">$0</span></div>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg btn-glow" id="checkoutBtn">
+        🛒 FINALIZAR COMPRA
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ CHECKOUT MODAL ============ -->
+  <div class="checkout-overlay" id="checkoutOverlay">
+    <div class="checkout-modal" id="checkoutModal">
+      <div class="checkout-header">
+        <h2>📦 Finalizar Pedido</h2>
+        <button class="checkout-close" id="checkoutClose" aria-label="Cerrar checkout">✕</button>
+      </div>
+
+      <div id="checkoutForm">
+        <div class="checkout-body">
+          <!-- Order Summary -->
+          <div class="checkout-summary" id="checkoutSummary">
+            <h3>Resumen del pedido</h3>
+          </div>
+
+          <!-- Delivery Zone Calculator -->
+          <div class="delivery-calculator">
+            <h3 class="form-label" style="text-transform:uppercase;letter-spacing:1px;margin-bottom:0.75rem;">📍 Calcular envío</h3>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Compartí tu ubicación para calcular el costo de envío.</p>
+            <button class="btn btn-secondary btn-block" id="geolocateBtn" type="button" style="margin-bottom:0.75rem;">
+              📍 CALCULAR ENVÍO CON MI UBICACIÓN
+            </button>
+            <div id="geoStatus"></div>
+            <div id="deliveryResult" style="display:none;"></div>
+          </div>
+
+          <!-- Scheduled Time Selector (Hidden by Default) -->
+          <div class="form-group" id="scheduledTimeGroup" style="display: none;">
+            <label class="form-label" style="display: block; margin-bottom: 0.75rem;">Hora de Entrega (Esta Noche) *</label>
+            <input type="hidden" id="scheduledTime" value="">
+            <div class="time-slots-grid" id="timeSlotsGrid">
+              <!-- Dynamically generated buttons -->
+            </div>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="customerName">Nombre *</label>
+              <input type="text" class="form-input" id="customerName" placeholder="Tu nombre completo" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customerEmail">Correo Electrónico *</label>
+              <input type="email" class="form-input" id="customerEmail" placeholder="nombre@correo.com" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="customerPhone">Teléfono *</label>
+              <input type="tel" class="form-input" id="customerPhone" placeholder="+56 9 1234 5678" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="customerAddress">Dirección *</label>
+              <input type="text" class="form-input" id="customerAddress" placeholder="Calle y número" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="customerReference">Referencia de entrega</label>
+            <input type="text" class="form-input" id="customerReference" placeholder="Ej: Depto 3B, casa azul, etc.">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="customerComments">Comentarios del pedido</label>
+            <textarea class="form-input" id="customerComments" placeholder="Instrucciones especiales, horario preferido, etc."></textarea>
+          </div>
+
+          <!-- Payment Methods -->
+          <div class="payment-methods">
+            <h3>Método de pago</h3>
+            <div class="payment-options">
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="flow" checked>
+                <div class="payment-option-label"><img src="assets/images/logo.png" class="payment-option-logo-img" alt="Lomas & Drinks"><span class="payment-option-name">Flow</span><span class="payment-option-desc">Pago con tarjeta seguro</span></div>
+              </label>
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="transfer">
+                <div class="payment-option-label"><span class="payment-option-icon">🏦</span><span class="payment-option-name">Transferencia</span><span class="payment-option-desc">Transferencia bancaria</span></div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Transfer Info -->
+          <div class="transfer-info" id="transferInfo">
+            <h4>Datos para Transferencia</h4>
+            <div class="transfer-row"><span class="label">Nombre</span><span class="value">Nicolás Vera</span></div>
+            <div class="transfer-row"><span class="label">RUT</span><span class="value">19.512.616-K</span></div>
+            <div class="transfer-row"><span class="label">Banco</span><span class="value">Mercado Pago</span></div>
+            <div class="transfer-row"><span class="label">Tipo de Cuenta</span><span class="value">Cuenta Vista</span></div>
+            <div class="transfer-row"><span class="label">N° Cuenta</span><span class="value">1077621682</span></div>
+            <div class="transfer-row"><span class="label">Email</span><span class="value">pagos@lomasdrinks.cl</span></div>
+            <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+              📌 Realiza la transferencia y envía el comprobante por <a href="https://wa.me/56922303780" target="_blank" style="color: var(--gold);">WhatsApp</a> para confirmar tu pedido.
+            </p>
+          </div>
+        </div>
+
+        <div class="checkout-footer">
+          <button class="btn btn-primary btn-block btn-lg btn-glow" id="placeOrderBtn">
+            ✅ CONFIRMAR PEDIDO
+          </button>
+        </div>
+      </div>
+
+      <!-- Confirmation -->
+      <div class="confirmation" id="orderConfirmation" style="display:none;">
+        <span class="confirmation-icon">🎉</span>
+        <h3>¡Pedido Recibido!</h3>
+        <p id="confirmationMessage">Tu pedido ha sido registrado exitosamente.</p>
+        <p id="confirmationOrderNumber" style="color: var(--gold); font-weight: 700; font-size: 1.2rem;"></p>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+          <button class="btn btn-primary" id="viewTrackingBtn">VER ESTADO DEL PEDIDO</button>
+          <button class="btn btn-secondary" onclick="location.reload()">SEGUIR COMPRANDO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ORDER TRACKING MODAL ============ -->
+  <div class="tracking-overlay" id="trackingOverlay">
+    <div class="tracking-modal">
+      <div class="tracking-header">
+        <h2>📦 Estado de tu Pedido</h2>
+        <button class="checkout-close" id="trackingClose" aria-label="Cerrar tracking">✕</button>
+      </div>
+      <div class="tracking-body" id="trackingBody">
+        <div class="tracking-order-number" id="trackingOrderNumber"></div>
+        <div class="tracking-pipeline" id="trackingPipeline">
+          <div class="tracking-step" data-status="new">
+            <div class="tracking-step-icon">📋</div>
+            <div class="tracking-step-info"><div class="tracking-step-name">Pedido Recibido</div><div class="tracking-step-desc">Tu pedido fue registrado</div></div>
+            <div class="tracking-step-line"></div>
+          </div>
+          <div class="tracking-step" data-status="confirmed">
+            <div class="tracking-step-icon">✅</div>
+            <div class="tracking-step-info"><div class="tracking-step-name">Confirmado</div><div class="tracking-step-desc">Pago verificado</div></div>
+            <div class="tracking-step-line"></div>
+          </div>
+          <div class="tracking-step" data-status="preparing">
+            <div class="tracking-step-icon">📦</div>
+            <div class="tracking-step-info"><div class="tracking-step-name">Preparando</div><div class="tracking-step-desc">Tu pedido está en preparación</div></div>
+            <div class="tracking-step-line"></div>
+          </div>
+          <div class="tracking-step" data-status="delivering">
+            <div class="tracking-step-icon">🛵</div>
+            <div class="tracking-step-info"><div class="tracking-step-name">En Camino</div><div class="tracking-step-desc">El repartidor va hacia ti</div></div>
+            <div class="tracking-step-line"></div>
+          </div>
+          <div class="tracking-step" data-status="delivered">
+            <div class="tracking-step-icon">🎉</div>
+            <div class="tracking-step-info"><div class="tracking-step-name">Entregado</div><div class="tracking-step-desc">¡Disfruta tu pedido!</div></div>
+          </div>
+        </div>
+        <div class="tracking-cancelled" id="trackingCancelled" style="display:none;">
+          <span style="font-size:3rem;">❌</span>
+          <h3 style="color:var(--error);margin-top:1rem;">Pedido Cancelado</h3>
+          <p style="color:var(--text-secondary);margin-top:0.5rem;">Tu pedido ha sido cancelado. Contáctanos si tienes dudas.</p>
+        </div>
+        <div class="tracking-details" id="trackingDetails"></div>
+        <div class="tracking-updated" id="trackingUpdated"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ STICKY CTA BAR (mobile) ============ -->
+  <div class="sticky-cta-bar" id="stickyBar">
+    <div class="sticky-cta-inner">
+      <div class="sticky-cta-text">
+        <strong>🍸 Lomas & Drinks</strong>
+        <small>Oferta Lanzamiento $9.990</small>
+      </div>
+      <button class="btn btn-primary btn-sm btn-glow" id="stickyBarBtn">COMPRAR</button>
+    </div>
+  </div>
+
+  <!-- ============ WHATSAPP FLOAT ============ -->
+  <a href="https://wa.me/56922303780?text=Hola!%20Quiero%20hacer%20un%20pedido%20🍸" target="_blank" rel="noopener" class="whatsapp-float" id="whatsappFloat" aria-label="Contactar por WhatsApp">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <!-- ============ LAUNCH OVERLAY ============ -->
+  <div id="launchOverlay" class="launch-overlay">
+    <div class="launch-content">
+      <img src="assets/images/logo.png" alt="Lomas & Drinks Logo" style="display: block; margin: 0 auto 20px auto; max-height: 140px; width: auto; max-width: 100%; object-fit: contain;">
+      <h1 style="font-family: var(--font-display); color: var(--gold); font-size: 2.5rem; margin-bottom: 10px;">PRÓXIMAMENTE</h1>
+      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">Lomas & Drinks: La evolución de la coctelería y el Late Night. <br>Estamos en la previa, durante y en el after; siempre activos con delivery hasta tu puerta.</p>
+      
+      <img src="assets/images/banner_bottles.png" alt="Fiesta y Cocktails" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+      
+      <div>
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 25px; padding: 10px 20px; font-weight: bold; border-color: #E1306C; color: #E1306C;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          SÍGUENOS EN INSTAGRAM
+        </a>
+      </div>
+
+      <div id="countdownDisplay" class="countdown-display">
+        <!-- JS will populate this -->
+      </div>
+
+      <div class="launch-slot-machine-box">
+        <h3 style="color: var(--gold); margin-bottom: 10px;">🎁 REGALO DE LANZAMIENTO</h3>
+        <p style="font-size: 0.9rem; margin-bottom: 15px;">Regístrate para tirar la palanca. Si ganas, ¡tú eliges tu premio!</p>
+        
+        <form id="launchForm" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+          <input type="text" id="launchName" placeholder="Nombre y Apellido" required style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.5); color: white;">
+          <input type="tel" id="launchPhone" placeholder="Teléfono (+569...)" required style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.5); color: white;">
+          <button type="submit" class="btn btn-outline" style="padding: 8px;">REGISTRARME Y DESBLOQUEAR</button>
+        </form>
+
+        <div class="slot-machine-container" id="launchSlotContainer" style="opacity: 0.5; pointer-events: none;">
+          <div class="slot-window"><div class="slot-reel" id="reel1"><div class="slot-symbol">🍹</div></div></div>
+          <div class="slot-window"><div class="slot-reel" id="reel2"><div class="slot-symbol">🍻</div></div></div>
+          <div class="slot-window"><div class="slot-reel" id="reel3"><div class="slot-symbol">🧊</div></div></div>
+        </div>
+        
+        <div class="slot-result" id="slotResult">Bloqueado</div>
+        <button class="btn btn-primary btn-glow" id="spinBtn" disabled style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #ff0055, #ffaa00); opacity: 0.5;">🎰 JUGAR AHORA</button>
+        
+        <div id="prizeSelector" style="display: none; margin-top: 15px;">
+          <p style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">¡GANASTE! ELIGE TU PREMIO:</p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn btn-outline select-prize-btn" data-prize="HIELO GRATIS">🧊 HIELO GRATIS</button>
+            <button class="btn btn-outline select-prize-btn" data-prize="ENVÍO GRATIS">🚚 ENVÍO GRATIS</button>
+            <button class="btn btn-outline select-prize-btn" data-prize="10% DCTO">💸 10% DCTO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PAYMENT LOADING OVERLAY ============ -->
+  <div id="paymentLoadingOverlay" class="payment-loading-overlay hidden">
+    <div class="payment-loading-content">
+      <div class="logo-spinner-container">
+        <img src="assets/images/logo.png" alt="Lomas & Drinks" class="payment-loading-logo">
+        <div class="spinner-ring"></div>
+      </div>
+      <h3>Procesando Pago Seguro</h3>
+      <p>Redirigiendo de forma segura a Flow...</p>
+    </div>
+  </div>
+
+  <!-- ============ CUSTOM ALERT MODAL ============ -->
+  <div id="customAlertOverlay" class="custom-alert-overlay hidden">
+    <div class="custom-alert-box">
+      <div class="custom-alert-icon" id="customAlertIcon">⚠️</div>
+      <h3 id="customAlertTitle">Aviso</h3>
+      <p id="customAlertMessage">Mensaje</p>
+      <button class="btn btn-primary btn-block" id="customAlertBtn" style="margin-top: 10px;">ENTENDIDO</button>
+    </div>
+  </div>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script src="scripts/firebase-config.js" charset="utf-8"></script>
+  <script src="scripts/app.js" charset="utf-8"></script>
+  <script src="scripts/slot-machine.js" charset="utf-8"></script>
+</body>
+</html>

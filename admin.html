@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lomas & Drinks — Panel de Administración</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles/admin.css">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  
+  <!-- ROUTE GUARD SCRIPT -->
+  <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    // Check auth directly. If we had a blocking check we'd do it synchronously via localStorage, 
+    // but doing it via module is safer to verify the token.
+    window.checkAuthGuard = (app) => {
+      const auth = getAuth(app);
+      onAuthStateChanged(auth, (user) => {
+        if (!user) {
+          window.location.replace('login.html');
+        } else {
+          document.body.style.display = 'block'; // Show body after confirmed auth
+          if (document.getElementById('btnLogout')) {
+            document.getElementById('btnLogout').style.display = 'flex';
+          }
+        }
+      });
+    };
+  </script>
+  <style>
+    /* Dropdown Styles */
+    .user-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .user-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .user-btn:hover {
+      background: var(--bg-card);
+      border-color: var(--gold);
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 110%;
+      background-color: var(--bg-elevated);
+      min-width: 180px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      z-index: 1000;
+      overflow: hidden;
+    }
+    .user-menu.active .dropdown-content {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+    .dropdown-item {
+      color: var(--text-primary);
+      padding: 12px 16px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .dropdown-item:hover {
+      background-color: var(--bg-card);
+      color: var(--gold);
+    }
+    .dropdown-item.danger:hover {
+      color: var(--error);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body style="display: none;"> <!-- Hide body until auth confirmed -->
+
+  <!-- ============================================ -->
+  <!-- HEADER -->
+  <!-- ============================================ -->
+  <header class="admin-header">
+    <div class="header-left" style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;">
+      <a href="index.html" title="Ir a la tienda">
+        <img src="assets/images/logo.png" alt="Logo" class="admin-logo" style="max-height: 60px; object-fit: cover; object-position: center top;">
+      </a>
+      <span class="header-badge" style="font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 4px; background: rgba(220, 163, 17, 0.2); color: var(--gold); border: 1px solid var(--gold);">Admin Panel</span>
+    </div>
+    <div class="header-right" style="display: flex; align-items: center; justify-content: flex-end; gap: 1rem;">
+      
+      <div class="connection-status" id="connectionStatus" style="margin-right: 0.5rem;">
+        <span class="status-dot offline"></span>
+        <span class="status-text">Desconectado</span>
+      </div>
+      
+      <button class="btn-sound" id="btnSound" title="Activar sonido de notificaciones">
+        <svg class="sound-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+          <line class="sound-off-line" x1="23" y1="9" x2="17" y2="15"/>
+          <line class="sound-off-line" x1="17" y1="9" x2="23" y2="15"/>
+          <path class="sound-on-wave1" d="M15.54 8.46a5 5 0 010 7.07" style="display:none"/>
+          <path class="sound-on-wave2" d="M19.07 4.93a10 10 0 010 14.14" style="display:none"/>
+        </svg>
+        <span class="sound-label">Activar Sonido</span>
+      </button>
+
+      <button class="btn btn-action" id="btnNewOrder" style="display: flex; align-items: center; gap: 0.5rem; background: var(--gold); color: var(--bg-primary); border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Nuevo Pedido
+      </button>
+
+      <!-- USER DROPDOWN -->
+      <div class="user-menu" id="userMenu">
+        <button class="user-btn" id="btnUserToggle">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          Administrador
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.2rem;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <div class="dropdown-content">
+          <div class="dropdown-item" id="btnHistory">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Historial de Ventas
+          </div>
+          <div class="dropdown-item" id="btnClearTestData" style="color: var(--error);">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+            Limpiar Datos de Prueba
+          </div>
+          <div class="dropdown-item danger" id="btnLogout">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Cerrar Sesión
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ============================================ -->
+  <!-- FIREBASE SETUP BANNER (shown when not configured) -->
+  <!-- ============================================ -->
+  <div class="setup-banner" id="setupBanner" style="display:none;">
+    <div class="setup-banner-content">
+      <div class="setup-icon">⚠️</div>
+      <div class="setup-text">
+        <h3>Firebase no configurado</h3>
+        <p>Para recibir pedidos en tiempo real, configura Firebase en <code>scripts/firebase-config.js</code>.</p>
+        <details class="setup-details">
+          <summary>Ver instrucciones de configuración</summary>
+          <ol>
+            <li>Ve a <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+            <li>Crea un nuevo proyecto o usa uno existente</li>
+            <li>Ve a <strong>Configuración del proyecto > General</strong></li>
+            <li>En "Tus apps", haz clic en el ícono web (<code>&lt;/&gt;</code>)</li>
+            <li>Registra la app y copia la configuración</li>
+            <li>Reemplaza los valores en <code>scripts/firebase-config.js</code></li>
+            <li>En <strong>Firestore Database</strong>, crea la base de datos en modo test</li>
+          </ol>
+        </details>
+      </div>
+      <button class="setup-dismiss" id="setupDismiss">&times;</button>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- DASHBOARD STATS -->
+  <!-- ============================================ -->
+  <section class="dashboard-stats">
+    <div class="stat-card">
+      <div class="stat-icon" style="font-size: 1.8rem; background: transparent; border: none; align-items: center; justify-content: center; display: flex; color: initial;">🍹</div>
+      <div class="stat-info">
+        <span class="stat-value" id="statTotalOrders">0</span>
+        <span class="stat-label">Pedidos Hoy</span>
+      </div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-icon">🔔</div>
+      <div class="stat-info">
+        <span class="stat-value" id="statPendingOrders">0</span>
+        <span class="stat-label">Pendientes</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info">
+        <span class="stat-value" id="statRevenue">$0</span>
+        <span class="stat-label">Ingresos Hoy</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <span class="stat-value" id="statDelivered">0</span>
+        <span class="stat-label">Entregados</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ -->
+  <!-- MAIN CONTENT -->
+  <!-- ============================================ -->
+  <main class="admin-main">
+    <!-- Filter Tabs -->
+    <div class="filter-bar">
+      <h2 class="section-title">Pedidos</h2>
+      <div class="filter-tabs" id="filterTabs">
+        <button class="filter-tab active" data-filter="all">Todos</button>
+        <button class="filter-tab" data-filter="new">
+          Nuevos <span class="tab-count" id="countNew">0</span>
+        </button>
+        <button class="filter-tab" data-filter="confirmed">Confirmados</button>
+        <button class="filter-tab" data-filter="preparing">En Preparación</button>
+        <button class="filter-tab" data-filter="delivering">En Camino</button>
+        <button class="filter-tab" data-filter="delivered">Entregados</button>
+        <button class="filter-tab" data-filter="cancelled">Cancelados</button>
+      </div>
+    </div>
+
+    <!-- Orders Container -->
+    <div class="orders-container" id="ordersContainer">
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🍹</div>
+        <h3>No hay pedidos aún</h3>
+        <p>Los nuevos pedidos aparecerán aquí en tiempo real.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============================================ -->
+  <!-- ORDER DETAIL MODAL -->
+  <!-- ============================================ -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalOrderNumber">Pedido #LD-0000</h2>
+        <span class="modal-status" id="modalStatus">Nuevo</span>
+      </div>
+
+      <div class="modal-body">
+        <!-- Customer Info -->
+        <div class="modal-section">
+          <h3 class="modal-section-title">👤 Información del Cliente</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Nombre</span>
+              <span class="info-value" id="modalCustomerName">—</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Teléfono</span>
+              <span class="info-value" id="modalCustomerPhone">—</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">Dirección</span>
+              <span class="info-value" id="modalCustomerAddress">—</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">Referencia</span>
+              <span class="info-value" id="modalCustomerReference">—</span>
+            </div>
+            <div class="info-item full-width">
+              <span class="info-label">Comentarios</span>
+              <span class="info-value" id="modalCustomerComments">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="modal-section">
+          <h3 class="modal-section-title">🍸 Productos</h3>
+          <div class="modal-items-list" id="modalItemsList">
+            <!-- Items rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="modal-section">
+          <h3 class="modal-section-title">💳 Pago</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Método</span>
+              <span class="info-value" id="modalPaymentMethod">—</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Estado</span>
+              <span class="info-value" id="modalPaymentStatus">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="modal-total">
+          <span>Total</span>
+          <span class="modal-total-value" id="modalTotal">$0</span>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="modal-timestamps">
+          <span id="modalCreatedAt">Creado: —</span>
+          <span id="modalUpdatedAt">Actualizado: —</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-actions" id="modalActions">
+        <!-- Action buttons rendered by JS based on current status -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- WHATSAPP PREVIEW MODAL -->
+  <!-- ============================================ -->
+  <div class="modal-overlay" id="waModal" style="display: none; z-index: 10000;">
+    <div class="modal-content" style="max-width: 500px; padding: 0; overflow: hidden;">
+      <div class="modal-header" style="background: var(--whatsapp); color: white; padding: 1.5rem;">
+        <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem; color: white;">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          Vista Previa de Mensaje
+        </h2>
+        <button class="modal-close" id="waModalClose" style="color: white;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem;">
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+          Puedes editar el mensaje antes de enviarlo:
+        </p>
+        <textarea id="waModalText" style="width: 100%; height: 200px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 1rem; font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.5; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></textarea>
+      </div>
+      <div class="modal-actions" style="padding: 1.5rem; background: var(--bg-card); border-top: 1px solid var(--border);">
+        <button class="btn" id="waModalSend" style="width: 100%; background: var(--whatsapp); color: white; border: none; padding: 1rem; font-size: 1.1rem; border-radius: 8px;">
+          Abrir en WhatsApp Web
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MANUAL ORDER MODAL -->
+  <!-- ============================================ -->
+  <div class="modal-overlay" id="manualModal" style="display: none; z-index: 9000;">
+    <div class="modal-content" style="max-width: 600px; padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="padding: 1.5rem; background: var(--bg-elevated); border-bottom: 1px solid var(--border);">
+        <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          Nuevo Pedido Manual
+        </h2>
+        <button class="modal-close" id="manualModalClose">&times;</button>
+      </div>
+      
+      <div class="modal-body" style="padding: 1.5rem; overflow-y: auto;">
+        <h3 class="modal-section-title">Información del Cliente</h3>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Nombre *</label>
+          <input type="text" id="manName" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary);" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Teléfono *</label>
+          <input type="tel" id="manPhone" placeholder="+56 9 1234 5678" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary);" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Dirección *</label>
+          <input type="text" id="manAddress" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary);" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Referencia</label>
+          <input type="text" id="manReference" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary);">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Comentarios (Opcional)</label>
+          <textarea id="manComments" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); resize: vertical; min-height: 60px;"></textarea>
+        </div>
+
+        <h3 class="modal-section-title">Productos *</h3>
+        <div id="manProductsList" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem; background: var(--bg-card);">
+          <!-- Generado dinámicamente -->
+        </div>
+
+        <h3 class="modal-section-title">Pago y Envío</h3>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+          <div style="flex: 1;">
+            <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Método de Pago</label>
+            <select id="manPayment" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;">
+              <option value="transfer" style="background: var(--bg-elevated);">Transferencia</option>
+              <option value="cash" style="background: var(--bg-elevated);">Efectivo</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label class="form-label" style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">Costo Envío</label>
+            <input type="number" id="manDelivery" value="0" min="0" step="500" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary);">
+          </div>
+        </div>
+
+        <div class="modal-total" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: bold;">
+          <span>Total:</span>
+          <span id="manTotalLabel" style="color: var(--gold);">$0</span>
+        </div>
+      </div>
+      
+      <div class="modal-actions" style="padding: 1.5rem; background: var(--bg-card); border-top: 1px solid var(--border-subtle);">
+        <button class="btn btn-action primary" id="manSubmit" style="width: 100%; background: var(--gold); color: var(--bg-primary); border: none; padding: 1rem; font-size: 1.1rem; border-radius: 8px; font-weight: bold; cursor: pointer;">
+          Crear Pedido Manual
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- HISTORY MODAL -->
+  <!-- ============================================ -->
+  <div class="modal-overlay" id="historyModal" style="display: none; z-index: 9000;">
+    <div class="modal-content" style="max-width: 800px; padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="padding: 1.5rem; background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle);">
+        <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Historial de Ventas
+        </h2>
+        <button class="modal-close" id="historyModalClose">&times;</button>
+      </div>
+      
+      <div class="modal-body" style="padding: 1.5rem; overflow-y: auto;">
+        <div style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem; background: var(--bg-primary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Desde (Fecha de inicio)</label>
+            <input type="date" id="historyStart" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); outline: none;">
+          </div>
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Hasta (Fecha de fin)</label>
+            <input type="date" id="historyEnd" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); outline: none;">
+          </div>
+          <button id="btnSearchHistory" class="btn btn-action primary" style="background: var(--gold); color: var(--bg-primary); border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; height: 46px;">
+            Buscar
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h3 style="margin: 0;">Resultados</h3>
+          <div style="font-size: 1.2rem; font-weight: bold; color: var(--gold);" id="historyTotalRevenue">$0</div>
+        </div>
+        
+        <div id="historyResults" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Selecciona un rango de fechas para buscar.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SCRIPTS -->
+  <!-- ============================================ -->
+  <script src="scripts/firebase-config.js?v=4" charset="utf-8"></script>
+  <script src="scripts/admin.js?v=4" charset="utf-8"></script>
+
+</body>
+</html>
