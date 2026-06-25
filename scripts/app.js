@@ -888,6 +888,23 @@
     }
     saveCart();
     renderCart();
+    
+    // GTM tracking
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'add_to_cart',
+      ecommerce: {
+        value: item.price * item.quantity,
+        currency: 'CLP',
+        items: [{
+          item_id: item.id,
+          item_name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }]
+      }
+    });
+
     // Recalculate delivery when cart changes
     if (deliveryDistance !== null) {
       calculateDeliveryFee();
@@ -899,6 +916,39 @@
   function updateCartItemQty(id, delta) {
     const item = cart.find(i => i.id === id);
     if (!item) return;
+    
+    // GTM tracking
+    window.dataLayer = window.dataLayer || [];
+    if (delta > 0) {
+      window.dataLayer.push({
+        event: 'add_to_cart',
+        ecommerce: {
+          value: item.price * delta,
+          currency: 'CLP',
+          items: [{
+            item_id: item.id,
+            item_name: item.name,
+            price: item.price,
+            quantity: delta
+          }]
+        }
+      });
+    } else if (delta < 0) {
+      window.dataLayer.push({
+        event: 'remove_from_cart',
+        ecommerce: {
+          value: item.price * Math.abs(delta),
+          currency: 'CLP',
+          items: [{
+            item_id: item.id,
+            item_name: item.name,
+            price: item.price,
+            quantity: Math.abs(delta)
+          }]
+        }
+      });
+    }
+
     item.quantity += delta;
     if (item.quantity <= 0) { removeFromCart(id); return; }
     saveCart();
@@ -911,6 +961,25 @@
   }
 
   function removeFromCart(id) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      // GTM tracking
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'remove_from_cart',
+        ecommerce: {
+          value: item.price * item.quantity,
+          currency: 'CLP',
+          items: [{
+            item_id: item.id,
+            item_name: item.name,
+            price: item.price,
+            quantity: item.quantity
+          }]
+        }
+      });
+    }
+    
     cart = cart.filter(i => i.id !== id);
     saveCart();
     renderCart();
@@ -1027,6 +1096,22 @@
     checkoutOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
     
+    // GTM tracking
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'begin_checkout',
+      ecommerce: {
+        value: getCartTotal(),
+        currency: 'CLP',
+        items: cart.map(item => ({
+          item_id: item.id,
+          item_name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }))
+      }
+    });
+
     if (isStoreClosed) {
       loadTimeSlots();
     }
@@ -1551,6 +1636,25 @@
       
       if (paymentStatus === 'success') {
         const orderTotal = getCartTotal();
+        const cartItems = [...cart];
+        
+        // GTM tracking
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'purchase',
+          ecommerce: {
+            transaction_id: orderNum,
+            value: parseFloat(orderTotal),
+            currency: 'CLP',
+            items: cartItems.map(item => ({
+              item_id: item.id,
+              item_name: item.name,
+              price: item.price,
+              quantity: item.quantity
+            }))
+          }
+        });
+
         cart = [];
         saveCart();
         renderCart();
