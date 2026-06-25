@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+function initSlotMachine() {
   const launchForm = document.getElementById('launchForm');
   const launchName = document.getElementById('launchName');
   const launchPhone = document.getElementById('launchPhone');
@@ -14,11 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   
   const symbols = ['🍹', '🍻', '🧊', '🍒', '🍋', '🍇'];
-  const symbolHeight = 80;
   const symbolsPerReel = 30;
 
   let isSpinning = false;
   let userData = null;
+
+  function getSymbolHeight() {
+    if (reels[0] && reels[0].firstElementChild) {
+      return reels[0].firstElementChild.clientHeight || reels[0].firstElementChild.offsetHeight || 80;
+    }
+    const temp = document.querySelector('.slot-symbol');
+    if (temp) return temp.clientHeight || temp.offsetHeight || 80;
+    return window.innerWidth <= 480 ? 60 : 80;
+  }
 
   function showCustomAlert(title, message, icon = '⚠️') {
     try {
@@ -177,10 +185,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const stopIndex = symbolsPerReel - 3;
+      const currentSymbolHeight = getSymbolHeight();
       
       reels.forEach((reel, i) => {
+        if (!reel) return;
         reel.children[stopIndex].textContent = finalSymbols[i];
-        const stopPosition = stopIndex * symbolHeight;
+        const stopPosition = stopIndex * currentSymbolHeight;
         
         setTimeout(() => {
           reel.style.transition = 'transform 3s cubic-bezier(0.1, 0.7, 0.1, 1)';
@@ -245,4 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSlotMachine);
+} else {
+  initSlotMachine();
+}

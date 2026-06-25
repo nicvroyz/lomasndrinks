@@ -2890,6 +2890,7 @@ body.late-night-mode .promo-banner {
   align-items: center;
   justify-content: center;
   font-size: 3rem;
+  flex-shrink: 0;
 }
 
 .slot-result {
@@ -2994,6 +2995,7 @@ body.late-night-mode .promo-banner {
   .slot-symbol {
     height: 60px;
     font-size: 2rem;
+    flex-shrink: 0;
   }
   
   .slot-result {
