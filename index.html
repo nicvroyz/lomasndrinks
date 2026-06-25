@@ -730,14 +730,14 @@
   <!-- ============ LAUNCH OVERLAY ============ -->
   <div id="launchOverlay" class="launch-overlay">
     <div class="launch-content">
-      <img src="assets/images/logo.png" alt="Lomas & Drinks Logo" style="display: block; margin: 0 auto 20px auto; max-height: 140px; width: auto; max-width: 100%; object-fit: contain;">
-      <h1 style="font-family: var(--font-display); color: var(--gold); font-size: 2.5rem; margin-bottom: 10px;">PRÓXIMAMENTE</h1>
-      <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">Lomas & Drinks: La evolución de la coctelería y el Late Night. <br>Estamos en la previa, durante y en el after; siempre activos con delivery hasta tu puerta.</p>
+      <img src="assets/images/logo.png" alt="Lomas & Drinks Logo" class="launch-logo">
+      <h1 class="launch-title">PRÓXIMAMENTE</h1>
+      <p class="launch-subtitle">Lomas & Drinks: La evolución de la coctelería y el Late Night. <br>Estamos en la previa, durante y en el after; siempre activos con delivery hasta tu puerta.</p>
       
-      <img src="assets/images/banner_bottles.png" alt="Fiesta y Cocktails" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+      <img src="assets/images/banner_bottles.png" alt="Fiesta y Cocktails" class="launch-banner">
       
       <div>
-        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 25px; padding: 10px 20px; font-weight: bold; border-color: #E1306C; color: #E1306C;">
+        <a href="https://instagram.com/lomasndrinks" target="_blank" rel="noopener" class="btn btn-outline launch-insta-btn">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
           SÍGUENOS EN INSTAGRAM
         </a>
@@ -748,13 +748,13 @@
       </div>
 
       <div class="launch-slot-machine-box">
-        <h3 style="color: var(--gold); margin-bottom: 10px;">🎁 REGALO DE LANZAMIENTO</h3>
-        <p style="font-size: 0.9rem; margin-bottom: 15px;">Regístrate para tirar la palanca. Si ganas, ¡tú eliges tu premio!</p>
+        <h3 class="launch-gift-title">🎁 REGALO DE LANZAMIENTO</h3>
+        <p class="launch-gift-desc">Regístrate para tirar la palanca. Si ganas, ¡tú eliges tu premio!</p>
         
-        <form id="launchForm" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-          <input type="text" id="launchName" placeholder="Nombre y Apellido" required style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.5); color: white;">
-          <input type="tel" id="launchPhone" placeholder="Teléfono (+569...)" required style="padding: 10px; border-radius: 4px; border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.5); color: white;">
-          <button type="submit" class="btn btn-outline" style="padding: 8px;">REGISTRARME Y DESBLOQUEAR</button>
+        <form id="launchForm" class="launch-form">
+          <input type="text" id="launchName" placeholder="Nombre y Apellido" required class="launch-input">
+          <input type="tel" id="launchPhone" placeholder="Teléfono (+569...)" required class="launch-input">
+          <button type="submit" class="btn btn-outline launch-form-btn">REGISTRARME Y DESBLOQUEAR</button>
         </form>
 
         <div class="slot-machine-container" id="launchSlotContainer" style="opacity: 0.5; pointer-events: none;">
@@ -764,11 +764,11 @@
         </div>
         
         <div class="slot-result" id="slotResult">Bloqueado</div>
-        <button class="btn btn-primary btn-glow" id="spinBtn" disabled style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #ff0055, #ffaa00); opacity: 0.5;">🎰 JUGAR AHORA</button>
+        <button class="btn btn-primary btn-glow spin-btn" id="spinBtn" disabled>🎰 JUGAR AHORA</button>
         
-        <div id="prizeSelector" style="display: none; margin-top: 15px;">
-          <p style="color: var(--gold); font-weight: bold; margin-bottom: 10px;">¡GANASTE! ELIGE TU PREMIO:</p>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div id="prizeSelector" class="prize-selector" style="display: none;">
+          <p class="prize-selector-title">¡GANASTE! ELIGE TU PREMIO:</p>
+          <div class="prize-selector-options">
             <button class="btn btn-outline select-prize-btn" data-prize="HIELO GRATIS">🧊 HIELO GRATIS</button>
             <button class="btn btn-outline select-prize-btn" data-prize="ENVÍO GRATIS">🚚 ENVÍO GRATIS</button>
             <button class="btn btn-outline select-prize-btn" data-prize="10% DCTO">💸 10% DCTO</button>
