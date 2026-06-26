@@ -30,8 +30,8 @@
 
   // ─── PRODUCT DATA ───
   const PRODUCTS = {
-    'tropiconce': { id: 'tropiconce', name: 'Tropiconce', price: 9990, image: 'assets/images/tropiconce.png', description: 'Cocktail tropical con mango, maracuyá y toque cítrico' },
-    'pink-fantasy': { id: 'pink-fantasy', name: 'Pink Fantasy', price: 9990, image: 'assets/images/pink_fantasy.png', description: 'Cocktail rosado con fresa, frambuesa y toque floral' },
+    'tropiconce': { id: 'tropiconce', name: 'Tropiconce (1 Litro)', price: 9990, image: 'assets/images/tropiconce.png', description: 'Cocktail tropical de 1 Litro con mango, maracuyá y toque cítrico' },
+    'pink-fantasy': { id: 'pink-fantasy', name: 'Pink Fantasy (1 Litro)', price: 9990, image: 'assets/images/pink_fantasy.png', description: 'Cocktail rosado de 1 Litro con fresa, frambuesa y toque floral' },
     'promo-piscola': { id: 'promo-piscola', name: 'Promo Piscola Normal', price: 20000, image: 'assets/images/piscola.png', description: 'Pisco 1L + Bebida 1.5L + Hielo 1kg' },
     'promo-piscola-3l': { id: 'promo-piscola-3l', name: 'Promo Piscola Agrandada', price: 22000, image: 'assets/images/piscola.png', description: 'Pisco 1L + Bebida 3L + Hielo 1kg' },
     'promo-manzana': { id: 'promo-manzana', name: 'Promo Pisco Manzana', price: 27000, image: 'assets/images/manzana.png', description: 'Pisco Manzana 1L + Bebida 1.5L + Hielo 1kg' },
@@ -398,7 +398,7 @@
 
   function startSocialProofNotifications() {
     const names = ['Camila', 'Sebastián', 'Javiera', 'Matías', 'Valentina', 'Felipe', 'Catalina', 'Diego', 'Fernanda', 'Nicolás', 'Ignacio', 'Daniela', 'Sofía', 'Joaquín', 'Martina', 'Benjamín', 'Isidora', 'Vicente', 'Constanza', 'Tomás', 'Valeria', 'Cristóbal', 'Macarena'];
-    let products = ['Tropiconce 🍹', 'Pink Fantasy 🌸'];
+    let products = ['Tropiconce (1L) 🍹', 'Pink Fantasy (1L) 🌸'];
     
     if (document.body.classList.contains('late-night-mode')) {
       products = ['Promo Piscola Normal 🧊', 'Promo Pisco Manzana 🍏', 'Six Pack Escudo 🍻', 'Six Pack Cristal 🍻', 'Six Pack Royal Guard 🍻', 'Promo Piscola Agrandada 🧊'];
