@@ -1579,8 +1579,8 @@
     const countdownDisplay = document.getElementById('countdownDisplay');
     if (!launchOverlay || !countdownDisplay) return;
 
-    // Target: June 26, 2026 at 21:00:00 Chile Time (UTC-4)
-    const targetDate = new Date('2026-06-26T21:00:00-04:00').getTime();
+    // Target: June 26, 2026 at 13:30:00 Chile Time (UTC-4)
+    const targetDate = new Date('2026-06-26T13:30:00-04:00').getTime();
 
     function updateCountdown() {
       const now = new Date().getTime();
