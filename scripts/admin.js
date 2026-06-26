@@ -988,7 +988,11 @@
     });
     dom.waModalSend.addEventListener('click', () => {
       if (state.currentWaPhone && dom.waModalText.value) {
-        window.open(`https://wa.me/${state.currentWaPhone}?text=${encodeURIComponent(dom.waModalText.value)}`, '_blank');
+        let phone = state.currentWaPhone;
+        if (phone && phone.length === 9 && phone.startsWith('9')) {
+          phone = '56' + phone;
+        }
+        window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(dom.waModalText.value)}`, '_blank');
         closeWaModal();
       }
     });
