@@ -183,8 +183,8 @@
     });
     const chileHour = parseInt(formatter.format(new Date()), 10);
     
-    // Store is closed from 03:00 to 19:59 (3 to 19 inclusive) in Chile Time
-    isStoreClosed = chileHour >= 3 && chileHour < 20;
+    // Store is closed from 02:00 to 20:59 (2 to 20 inclusive) in Chile Time
+    isStoreClosed = chileHour >= 2 && chileHour < 21;
     
     // UI Elements
     const banner = document.getElementById('storeStatusBanner');
@@ -212,7 +212,7 @@
     
     grid.innerHTML = '<div class="loading-slots">Cargando horarios disponibles...</div>';
     
-    const TIME_SLOTS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00'];
+    const TIME_SLOTS = ['21:00', '21:30', '22:00', '22:30', '23:00', '23:30', '00:00', '00:30', '01:00', '01:30', '02:00'];
     const maxOrdersPerSlot = 1;
     const takenSlots = {};
     
@@ -275,25 +275,28 @@
     if (hiddenInput) hiddenInput.value = '';
     
     TIME_SLOTS.forEach(slot => {
+      // Si la hora ya fue reservada por otra persona, desaparece de la grilla
+      if (takenSlots[slot] >= maxOrdersPerSlot) {
+        return;
+      }
+      
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'time-slot-btn';
       btn.dataset.time = slot;
       
-      if (takenSlots[slot] >= maxOrdersPerSlot) {
-        btn.disabled = true;
-        btn.classList.add('disabled');
-        btn.innerHTML = `<s>${slot} hrs</s> <span class="slot-taken-label">Ocupado</span>`;
-      } else {
-        btn.textContent = slot + ' hrs';
-        btn.addEventListener('click', () => {
-          grid.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          if (hiddenInput) hiddenInput.value = slot;
-        });
-      }
+      btn.textContent = slot + ' hrs';
+      btn.addEventListener('click', () => {
+        grid.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        if (hiddenInput) hiddenInput.value = slot;
+      });
       grid.appendChild(btn);
     });
+
+    if (grid.children.length === 0) {
+      grid.innerHTML = '<div class="no-slots-alert" style="grid-column: 1/-1; text-align: center; color: var(--error); padding: 1.5rem; border: 1px dashed var(--error); border-radius: 8px; font-size: 0.95rem;">⚠️ Todos los horarios de entrega de hoy están reservados. Contáctanos por WhatsApp para coordinar.</div>';
+    }
   }
 
   function cacheDom() {
