@@ -1566,21 +1566,11 @@
     const launchOverlay = document.getElementById('launchOverlay');
     if (!launchOverlay) return;
 
-    // Check for preview/bypass options to allow developers or administrators to bypass overlay
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('preview') === 'true' || urlParams.get('bypass') === 'true') {
-      localStorage.setItem('launch_bypass', 'true');
-    }
-
-    if (localStorage.getItem('launch_bypass') === 'true') {
-      launchOverlay.classList.add('hidden');
-      launchOverlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      return;
-    }
-
-    const countdownDisplay = document.getElementById('countdownDisplay');
-    if (!launchOverlay || !countdownDisplay) return;
+    // Force bypass post-launch
+    launchOverlay.classList.add('hidden');
+    launchOverlay.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    return;
 
     // Target: June 26, 2026 at 13:30:00 Chile Time (UTC-4)
     const targetDate = new Date('2026-06-26T13:30:00-04:00').getTime();
