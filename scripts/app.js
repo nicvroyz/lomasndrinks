@@ -776,12 +776,13 @@
     calculateDeliveryFee();
     renderDeliveryResult();
 
-    const subtotal = getCartTotal();
+    const subtotalNormal = getCartSubtotalWithoutDiscount();
+    const totalWithoutDelivery = getCartTotal();
     const checkoutSubtotalEl = $('#checkoutSubtotalValue');
     const checkoutDeliveryEl = $('#checkoutDeliveryValue');
     const checkoutTotalEl = $('#checkoutTotalValue');
 
-    if (checkoutSubtotalEl) checkoutSubtotalEl.textContent = formatPrice(subtotal);
+    if (checkoutSubtotalEl) checkoutSubtotalEl.textContent = formatPrice(subtotalNormal);
 
     if (checkoutDeliveryEl) {
       if (deliveryDistance === null) {
@@ -800,7 +801,7 @@
     }
 
     if (checkoutTotalEl) {
-      const total = deliveryFee > 0 ? subtotal + deliveryFee : subtotal;
+      const total = deliveryFee > 0 ? totalWithoutDelivery + deliveryFee : totalWithoutDelivery;
       checkoutTotalEl.textContent = formatPrice(total);
     }
   }
@@ -994,6 +995,25 @@
   }
 
   function getCartTotal() {
+    let eligibleQty = 0;
+    let otherTotal = 0;
+    
+    cart.forEach(item => {
+      if (item.id === 'tropiconce' || item.id === 'pink-fantasy') {
+        eligibleQty += item.quantity;
+      } else {
+        otherTotal += item.price * item.quantity;
+      }
+    });
+    
+    const pairs = Math.floor(eligibleQty / 2);
+    const singles = eligibleQty % 2;
+    const promoTotal = (pairs * 18000) + (singles * 9990);
+    
+    return promoTotal + otherTotal;
+  }
+
+  function getCartSubtotalWithoutDiscount() {
     return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }
 
@@ -1038,9 +1058,24 @@
         </div>
       `).join('');
 
+      const subtotalNormal = getCartSubtotalWithoutDiscount();
       const total = getCartTotal();
-      cartSubtotal.textContent = formatPrice(total);
+      const discount = subtotalNormal - total;
+
+      cartSubtotal.textContent = formatPrice(subtotalNormal);
       cartTotal.textContent = formatPrice(total);
+
+      const cartDiscountRow = $('#cartDiscountRow');
+      const cartDiscount = $('#cartDiscount');
+      if (cartDiscountRow && cartDiscount) {
+        if (discount > 0) {
+          cartDiscountRow.style.display = 'flex';
+          cartDiscount.textContent = '-' + formatPrice(discount);
+        } else {
+          cartDiscountRow.style.display = 'none';
+        }
+      }
+
       cartFooter.style.display = 'block';
 
       // Show delivery upsell in cart if applicable
@@ -1133,20 +1168,35 @@
       </div>
     `).join('');
 
+    const subtotalNormal = getCartSubtotalWithoutDiscount();
+    const total = getCartTotal();
+    const discount = subtotalNormal - total;
+
+    let discountHtml = '';
+    if (discount > 0) {
+      discountHtml = `
+        <div class="checkout-summary-item" style="color:#2ecc71;">
+          <span>Descuento Promo 2x</span>
+          <span>-${formatPrice(discount)}</span>
+        </div>
+      `;
+    }
+
     checkoutSummary.innerHTML = `
       <h3>Resumen del pedido</h3>
       ${items}
       <div class="checkout-summary-item" style="border-top:1px solid var(--border-subtle);padding-top:0.5rem;margin-top:0.5rem;">
         <span>Subtotal</span>
-        <span id="checkoutSubtotalValue">${formatPrice(getCartTotal())}</span>
+        <span id="checkoutSubtotalValue">${formatPrice(subtotalNormal)}</span>
       </div>
+      ${discountHtml}
       <div class="checkout-summary-item">
         <span>Envío</span>
         <span id="checkoutDeliveryValue" style="color:var(--text-muted);">Calcular abajo ↓</span>
       </div>
       <div class="checkout-summary-total">
         <span>Total</span>
-        <span id="checkoutTotalValue">${formatPrice(getCartTotal())}</span>
+        <span id="checkoutTotalValue">${formatPrice(total)}</span>
       </div>
     `;
   }

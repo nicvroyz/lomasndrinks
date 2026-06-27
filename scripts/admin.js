@@ -1359,7 +1359,7 @@
         snapshot.forEach(docSnap => {
           const data = docSnap.data();
           if (data.status === 'entregado' || data.status === 'delivered') {
-            totalRev += (data.totals?.finalTotal || 0);
+            totalRev += (data.total || data.totals?.finalTotal || 0);
           }
           
           const dateStr = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString('es-CL') : 'Fecha desconocida';
@@ -1387,7 +1387,7 @@
             <div style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${cust.name || 'Sin nombre'} | 📞 ${cust.phone || 'Sin tel'}</div>
             <div style="margin-bottom: 0.5rem;"><strong>Dir:</strong> ${cust.address || 'Retiro en local'} ${cust.reference ? `(${cust.reference})` : ''}</div>
             <div style="margin-bottom: 0.5rem; color: var(--gold);">🛒 ${productsStr}</div>
-            <div style="text-align: right; font-weight: bold; font-size: 1.1rem;">Total: $${(data.totals?.finalTotal || 0).toLocaleString('es-CL')}</div>
+            <div style="text-align: right; font-weight: bold; font-size: 1.1rem;">Total: $${(data.total || data.totals?.finalTotal || 0).toLocaleString('es-CL')}</div>
           </div>`;
         });
       }
