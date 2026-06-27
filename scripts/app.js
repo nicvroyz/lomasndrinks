@@ -999,7 +999,7 @@
     let otherTotal = 0;
     
     cart.forEach(item => {
-      if (item.id === 'tropiconce' || item.id === 'pink-fantasy') {
+      if (item.id && (item.id.startsWith('tropiconce') || item.id.startsWith('pink-fantasy'))) {
         eligibleQty += item.quantity;
       } else {
         otherTotal += item.price * item.quantity;
