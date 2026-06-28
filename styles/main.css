@@ -503,6 +503,8 @@ ul, ol {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.5px;
+  margin-top: 0.5rem;
+  margin-bottom: 2.5rem;
   animation: fadeInUp 0.8s ease 0.52s both, schedulePulse 3s ease-in-out infinite;
 }
 
@@ -1636,6 +1638,8 @@ textarea.form-input {
     font-size: 0.82rem;
     padding: 0.45rem 1rem;
     text-align: center;
+    margin: 0.5rem auto 2rem auto;
+    width: fit-content;
   }
   
   .hero-trust {
