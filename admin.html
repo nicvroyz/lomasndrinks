@@ -12,7 +12,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="styles/admin.css">
+  <link rel="stylesheet" href="styles/admin.css?v=5">
+  
+  <!-- Dependencies: Chart.js for graphs and Tesseract.js for OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  
   <link rel="icon" type="image/png" href="assets/images/logo.png">
   
   <!-- ROUTE GUARD SCRIPT -->
@@ -185,69 +190,344 @@
   </div>
 
   <!-- ============================================ -->
-  <!-- DASHBOARD STATS -->
+  <!-- MAIN TABS NAVIGATION -->
   <!-- ============================================ -->
-  <section class="dashboard-stats">
-    <div class="stat-card">
-      <div class="stat-icon" style="font-size: 1.8rem; background: transparent; border: none; align-items: center; justify-content: center; display: flex; color: initial;">🍹</div>
-      <div class="stat-info">
-        <span class="stat-value" id="statTotalOrders">0</span>
-        <span class="stat-label">Pedidos Hoy</span>
-      </div>
-    </div>
-    <div class="stat-card highlight">
-      <div class="stat-icon">🔔</div>
-      <div class="stat-info">
-        <span class="stat-value" id="statPendingOrders">0</span>
-        <span class="stat-label">Pendientes</span>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">💰</div>
-      <div class="stat-info">
-        <span class="stat-value" id="statRevenue">$0</span>
-        <span class="stat-label">Ingresos Hoy</span>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">✅</div>
-      <div class="stat-info">
-        <span class="stat-value" id="statDelivered">0</span>
-        <span class="stat-label">Entregados</span>
-      </div>
-    </div>
-  </section>
+  <div class="admin-tabs-nav-container">
+    <nav class="admin-tabs-nav">
+      <button class="tab-nav-btn active" data-section="ordersSection">
+        <span class="tab-nav-icon">🍹</span>
+        <span class="tab-nav-label">Pedidos en Vivo</span>
+      </button>
+      <button class="tab-nav-btn" data-section="accountingSection">
+        <span class="tab-nav-icon">📊</span>
+        <span class="tab-nav-label">Contabilidad Avanzada</span>
+      </button>
+      <button class="tab-nav-btn" data-section="historySection">
+        <span class="tab-nav-icon">📅</span>
+        <span class="tab-nav-label">Historial de Ventas</span>
+      </button>
+    </nav>
+  </div>
 
   <!-- ============================================ -->
-  <!-- MAIN CONTENT -->
+  <!-- ORDERS SECTION (LIVE DASHBOARD) -->
   <!-- ============================================ -->
-  <main class="admin-main">
-    <!-- Filter Tabs -->
-    <div class="filter-bar">
-      <h2 class="section-title">Pedidos</h2>
-      <div class="filter-tabs" id="filterTabs">
-        <button class="filter-tab active" data-filter="all">Todos</button>
-        <button class="filter-tab" data-filter="new">
-          Nuevos <span class="tab-count" id="countNew">0</span>
-        </button>
-        <button class="filter-tab" data-filter="confirmed">Confirmados</button>
-        <button class="filter-tab" data-filter="preparing">En Preparación</button>
-        <button class="filter-tab" data-filter="delivering">En Camino</button>
-        <button class="filter-tab" data-filter="delivered">Entregados</button>
-        <button class="filter-tab" data-filter="cancelled">Cancelados</button>
+  <div id="ordersSection" class="admin-section-container">
+    
+    <!-- DASHBOARD STATS -->
+    <section class="dashboard-stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="font-size: 1.8rem; background: transparent; border: none; align-items: center; justify-content: center; display: flex; color: initial;">🍹</div>
+        <div class="stat-info">
+          <span class="stat-value" id="statTotalOrders">0</span>
+          <span class="stat-label">Pedidos Hoy</span>
+        </div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="stat-icon">🔔</div>
+        <div class="stat-info">
+          <span class="stat-value" id="statPendingOrders">0</span>
+          <span class="stat-label">Pendientes</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info">
+          <span class="stat-value" id="statRevenue">$0</span>
+          <span class="stat-label">Ingresos Hoy</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <span class="stat-value" id="statDelivered">0</span>
+          <span class="stat-label">Entregados</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-main">
+      <!-- Filter Tabs -->
+      <div class="filter-bar">
+        <h2 class="section-title">Pedidos</h2>
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" data-filter="all">Todos</button>
+          <button class="filter-tab" data-filter="new">
+            Nuevos <span class="tab-count" id="countNew">0</span>
+          </button>
+          <button class="filter-tab" data-filter="confirmed">Confirmados</button>
+          <button class="filter-tab" data-filter="preparing">En Preparación</button>
+          <button class="filter-tab" data-filter="delivering">En Camino</button>
+          <button class="filter-tab" data-filter="delivered">Entregados</button>
+          <button class="filter-tab" data-filter="cancelled">Cancelados</button>
+        </div>
+      </div>
+
+      <!-- Orders Container -->
+      <div class="orders-container" id="ordersContainer">
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🍹</div>
+          <h3>No hay pedidos aún</h3>
+          <p>Los nuevos pedidos aparecerán aquí en tiempo real.</p>
+        </div>
+      </div>
+    </main>
+    
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ACCOUNTING SECTION (CFO DASHBOARD) -->
+  <!-- ============================================ -->
+  <div id="accountingSection" class="admin-section-container" style="display: none;">
+    
+    <!-- 1. KPI Grid (Corporate Finance Indicators) -->
+    <div class="finance-kpi-grid">
+      
+      <!-- Gross Revenue -->
+      <div class="kpi-card-finance">
+        <div class="kpi-icon-finance">💰</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Ingresos Brutos</span>
+          <span class="kpi-value-finance" id="finGrossRevenue">$0</span>
+          <span class="kpi-subtitle-finance">Ventas acumuladas</span>
+        </div>
+      </div>
+      
+      <!-- COGS -->
+      <div class="kpi-card-finance">
+        <div class="kpi-icon-finance">📦</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Costo de Ventas (COGS)</span>
+          <span class="kpi-value-finance" id="finCOGS">$0</span>
+          <span class="kpi-subtitle-finance">Costo de mercadería</span>
+        </div>
+      </div>
+      
+      <!-- Gross Margin -->
+      <div class="kpi-card-finance" id="finGrossMarginCard">
+        <div class="kpi-icon-finance">📈</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Margen Bruto</span>
+          <span class="kpi-value-finance" id="finGrossMargin">$0</span>
+          <span class="kpi-percentage-finance" id="finGrossMarginPct">0%</span>
+        </div>
+      </div>
+      
+      <!-- OpEx -->
+      <div class="kpi-card-finance">
+        <div class="kpi-icon-finance">💸</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Gastos Operacionales (OpEx)</span>
+          <span class="kpi-value-finance" id="finOpEx">$0</span>
+          <span class="kpi-subtitle-finance">Boletas y facturas cargadas</span>
+        </div>
+      </div>
+      
+      <!-- Net Profit -->
+      <div class="kpi-card-finance" id="finNetProfitCard">
+        <div class="kpi-icon-finance">⚖️</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Utilidad Neta</span>
+          <span class="kpi-value-finance" id="finNetProfit">$0</span>
+          <span class="kpi-percentage-finance" id="finNetProfitPct">0%</span>
+        </div>
+      </div>
+      
+      <!-- Investment and ROI -->
+      <div class="kpi-card-finance">
+        <div class="kpi-icon-finance">🏦</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Inversión Inicial</span>
+          <div class="kpi-input-wrapper-finance">
+            <span class="kpi-currency-symbol">$</span>
+            <input type="number" id="finInitialInvestment" value="1000000" min="0" step="50000">
+          </div>
+          <span class="kpi-roi-label" id="finROI">ROI: 0%</span>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- 2. AI Accountant Dashboard Section -->
+    <div class="ai-accountant-container">
+      <div class="ai-accountant-header">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-title-wrap">
+          <h4>Auditor & Asesor de IA Lomas</h4>
+          <span class="ai-status-indicator"><span class="ai-pulse"></span>Contador Virtual Conectado</span>
+        </div>
+      </div>
+      <div class="ai-accountant-body">
+        
+        <!-- Alerts and Audits -->
+        <div class="ai-auditor-section">
+          <h5>🔍 Alertas de Auditoría en Tiempo Real</h5>
+          <div class="ai-alerts-list" id="aiAlertsList">
+            <div class="ai-alert success">
+              <span class="alert-icon">✓</span>
+              <p>Auditoría de caja completada: No se detectan descuadres de valores en los pedidos actuales.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-time Financial Q&A Chat -->
+        <div class="ai-chat-section">
+          <h5>💬 Consultas Contables del Negocio</h5>
+          <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message assistant">
+              Hola, soy tu contador virtual de Lomas & Drinks. He analizado tus números de ventas, costos de productos y gastos registrados. ¿En qué aspecto de las finanzas del local te gustaría que profundice hoy?
+            </div>
+          </div>
+          <div class="ai-chat-suggestions">
+            <button class="chat-suggest-btn" data-query="¿Cómo puedo mejorar mis utilidades?">📈 Mejorar Utilidad</button>
+            <button class="chat-suggest-btn" data-query="¿Hay descuadres en caja?">🔍 Ver Descuadres</button>
+            <button class="chat-suggest-btn" data-query="¿Cuál es el producto más rentable?">🍹 Producto Rentable</button>
+            <button class="chat-suggest-btn" data-query="¿Cómo voy respecto al punto de equilibrio?">⚖️ Punto de Equilibrio</button>
+          </div>
+          <div class="ai-chat-input-row">
+            <input type="text" id="aiChatInput" placeholder="Hazme una pregunta sobre las finanzas del local...">
+            <button id="btnAiChatSend" class="btn btn-action primary" style="min-width: 100px;">Consultar</button>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- Orders Container -->
-    <div class="orders-container" id="ordersContainer">
-      <!-- Empty state -->
-      <div class="empty-state" id="emptyState">
-        <div class="empty-icon">🍹</div>
-        <h3>No hay pedidos aún</h3>
-        <p>Los nuevos pedidos aparecerán aquí en tiempo real.</p>
+    <!-- 3. Charts Grid -->
+    <div class="finance-charts-grid">
+      <div class="chart-card">
+        <h3>Evolución Financiera (Ingresos vs. COGS vs. OpEx)</h3>
+        <div class="chart-wrapper">
+          <canvas id="revenueCostChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>Desglose de Gastos por Proveedor</h3>
+        <div class="chart-wrapper">
+          <canvas id="expenseDistributionChart"></canvas>
+        </div>
       </div>
     </div>
-  </main>
+
+    <!-- 4. Product Costs Editor & OpEx Expenses Wrapper -->
+    <div class="accounting-two-column-grid">
+      
+      <!-- Product Costs Editor -->
+      <div class="accounting-card">
+        <div class="card-header-flex">
+          <h3>Costos de Adquisición de Productos</h3>
+          <button id="btnSaveProductCosts" class="btn btn-action primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            Guardar Cambios
+          </button>
+        </div>
+        <div class="table-responsive-wrapper">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Precio Venta</th>
+                <th>Costo Unitario ($)</th>
+                <th>Margen Estimado</th>
+              </tr>
+            </thead>
+            <tbody id="productCostsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Expense Receipts Upload & List -->
+      <div class="accounting-card">
+        <h3>Registro de Egresos & Boletas</h3>
+        
+        <!-- File upload box -->
+        <div class="receipt-upload-zone" id="receiptUploadZone">
+          <div class="upload-icon">📷</div>
+          <p>Sube o toma una foto de la boleta para procesar con IA</p>
+          <span class="upload-subtext">Formatos: PNG, JPG, JPEG (Límite: 5MB)</span>
+          <input type="file" id="receiptFileInput" accept="image/*" style="display: none;">
+          <button type="button" class="btn btn-action secondary" onclick="document.getElementById('receiptFileInput').click()" style="margin-top: 0.8rem; font-size: 0.85rem; padding: 0.4rem 1rem;">
+            Seleccionar Imagen
+          </button>
+        </div>
+
+        <!-- OCR Loader -->
+        <div class="ocr-progress-container" id="ocrProgressContainer" style="display: none;">
+          <div class="ocr-spinner"></div>
+          <div class="ocr-progress-details">
+            <span class="ocr-status-title" id="ocrStatusTitle">Inicializando OCR...</span>
+            <div class="ocr-progress-bar-bg">
+              <div class="ocr-progress-bar-fill" id="ocrProgressBarFill" style="width: 0%;"></div>
+            </div>
+            <span class="ocr-status-pct" id="ocrStatusPct">0%</span>
+          </div>
+        </div>
+
+        <!-- Review / manual expense entry form -->
+        <div class="expense-entry-form" id="expenseForm" style="display: none;">
+          <h4 style="margin: 0 0 1rem 0; font-size: 0.95rem; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 0.4rem; color: var(--gold);">
+            Revisión de Datos Extraídos
+          </h4>
+          <div class="ocr-preview-container" id="ocrPreviewContainer">
+             <img id="ocrPreviewImage" src="" alt="Vista previa de boleta">
+          </div>
+          <div class="form-row-finance">
+            <div class="form-group-finance">
+              <label>Fecha Emisión *</label>
+              <input type="date" id="expDate" required>
+            </div>
+            <div class="form-group-finance">
+              <label>Proveedor / Local *</label>
+              <input type="text" id="expProvider" placeholder="Ej: CCU, Distribuidora" required>
+            </div>
+          </div>
+          <div class="form-row-finance">
+            <div class="form-group-finance">
+              <label>Detalle de Compra *</label>
+              <input type="text" id="expDetail" placeholder="Ej: Compra de 10 Sixpacks" required>
+            </div>
+            <div class="form-group-finance">
+              <label>Monto Total ($) *</label>
+              <input type="number" id="expAmount" min="0" placeholder="Monto final pagado" required>
+            </div>
+          </div>
+          <div class="form-actions-finance">
+            <button type="button" class="btn btn-action secondary" id="btnCancelExpense" style="flex: 1; padding: 0.6rem;">Cancelar</button>
+            <button type="button" class="btn btn-action primary" id="btnSaveExpense" style="flex: 2; padding: 0.6rem;">Guardar en Registro</button>
+          </div>
+        </div>
+
+        <!-- Expenses List Table -->
+        <h4 style="margin: 1.5rem 0 0.8rem 0; font-size: 1rem;">Historial de Gastos</h4>
+        <div class="table-responsive-wrapper" style="max-height: 250px; overflow-y: auto;">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Proveedor</th>
+                <th>Detalle</th>
+                <th>Monto</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="expensesTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+                  No hay gastos cargados este período.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
 
   <!-- ============================================ -->
   <!-- ORDER DETAIL MODAL -->
@@ -470,8 +750,8 @@
   <!-- ============================================ -->
   <!-- SCRIPTS -->
   <!-- ============================================ -->
-  <script src="scripts/firebase-config.js?v=4" charset="utf-8"></script>
-  <script src="scripts/admin.js?v=4" charset="utf-8"></script>
+  <script src="scripts/firebase-config.js?v=5" charset="utf-8"></script>
+  <script src="scripts/admin.js?v=5" charset="utf-8"></script>
 
 </body>
 </html>
