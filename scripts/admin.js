@@ -1592,6 +1592,10 @@
   // ============================================
   function openHistoryModal() {
     dom.historyModal.style.display = 'flex';
+    void dom.historyModal.offsetWidth;
+    dom.historyModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
     const today = new Date();
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(today.getDate() - 14);
@@ -1603,7 +1607,12 @@
   }
 
   function closeHistoryModal() {
-    dom.historyModal.style.display = 'none';
+    dom.historyModal.classList.remove('active');
+    setTimeout(() => {
+      dom.historyModal.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 300);
+
     let visibleSection = 'ordersSection';
     if (dom.accountingSection && dom.accountingSection.style.display !== 'none') {
       visibleSection = 'accountingSection';
@@ -2849,10 +2858,19 @@
     dom.newSupplyName.value = '';
     dom.invCostGroup.style.display = 'block';
     dom.inventoryModal.style.display = 'flex';
+    void dom.inventoryModal.offsetWidth;
+    dom.inventoryModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
 
   function closeInventoryModal() {
-    if (dom.inventoryModal) dom.inventoryModal.style.display = 'none';
+    if (dom.inventoryModal) {
+      dom.inventoryModal.classList.remove('active');
+      setTimeout(() => {
+        dom.inventoryModal.style.display = 'none';
+        document.body.style.overflow = '';
+      }, 300);
+    }
   }
 
   async function saveSuppliesFromExpense(items, date) {
