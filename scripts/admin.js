@@ -20,6 +20,8 @@
     productCosts: {},
     expenses: [],
     inventory: [],
+    currentReceiptFile: null,
+    currentReceiptBase64: null,
     initialInvestment: 65000,
     charts: {},
   };
@@ -168,7 +170,10 @@
     newSupplyNameGroup: $('#newSupplyNameGroup'),
     invAdjustComment: $('#invAdjustComment'),
     btnCancelInventory: $('#btnCancelInventory'),
-    btnSaveInventoryAdjustment: $('#btnSaveInventoryAdjustment')
+    btnSaveInventoryAdjustment: $('#btnSaveInventoryAdjustment'),
+    receiptPhotoModal: $('#receiptPhotoModal'),
+    receiptPhotoModalClose: $('#receiptPhotoModalClose'),
+    receiptPhotoImg: $('#receiptPhotoImg')
   };
 
   // ---- Status Labels ----
@@ -1189,6 +1194,16 @@
       });
     }
 
+    if (dom.receiptPhotoModalClose) {
+      dom.receiptPhotoModalClose.addEventListener('click', closeReceiptPhotoModal);
+    }
+
+    if (dom.receiptPhotoModal) {
+      dom.receiptPhotoModal.addEventListener('click', (e) => {
+        if (e.target === dom.receiptPhotoModal) closeReceiptPhotoModal();
+      });
+    }
+
     if (dom.receiptUploadZone && dom.receiptFileInput) {
       dom.receiptUploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -1957,12 +1972,30 @@
   // EXPENSES MANAGEMENT
   // ============================================
   async function saveExpense(date, provider, detail, amount, items = []) {
+    let imageUrl = '';
+    
+    if (state.currentReceiptFile && firebaseReady && db && state.firestoreModule) {
+      try {
+        const { getStorage, ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+        const storage = getStorage(app);
+        const fileRef = ref(storage, `receipts/${Date.now()}-${state.currentReceiptFile.name}`);
+        const snapshot = await uploadBytes(fileRef, state.currentReceiptFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      } catch (uploadErr) {
+        console.error('Error uploading receipt to Storage:', uploadErr);
+        imageUrl = state.currentReceiptBase64 || '';
+      }
+    } else {
+      imageUrl = state.currentReceiptBase64 || '';
+    }
+
     const expData = {
       date,
       provider,
       detail,
       amount: parseInt(amount) || 0,
       items: items,
+      imageUrl: imageUrl,
       createdAt: new Date()
     };
 
@@ -2015,14 +2048,29 @@
           <td>${exp.detail}</td>
           <td style="font-weight:700; color:var(--error);">$${exp.amount.toLocaleString('es-CL')}</td>
           <td>
-            <button class="btn-delete-expense" data-id="${exp.id}" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:1.1rem; padding:2px;">
-              🗑️
-            </button>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              ${exp.imageUrl ? `
+                <button class="btn-view-receipt" data-img="${exp.imageUrl}" style="background:none; border:none; color:var(--gold); cursor:pointer; font-size:1.1rem; padding:2px;" title="Ver boleta">
+                  👁️
+                </button>
+              ` : ''}
+              <button class="btn-delete-expense" data-id="${exp.id}" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:1.1rem; padding:2px;" title="Eliminar egreso">
+                🗑️
+              </button>
+            </div>
           </td>
         </tr>
       `;
     });
     dom.expensesTableBody.innerHTML = html;
+
+    // View buttons
+    dom.expensesTableBody.querySelectorAll('.btn-view-receipt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const imgUrl = btn.dataset.img;
+        openReceiptPhotoModal(imgUrl);
+      });
+    });
 
     // Delete buttons
     dom.expensesTableBody.querySelectorAll('.btn-delete-expense').forEach(btn => {
@@ -2056,6 +2104,8 @@
     dom.expProvider.value = '';
     dom.expDetail.value = '';
     dom.expAmount.value = '';
+    state.currentReceiptFile = null;
+    state.currentReceiptBase64 = null;
     if (dom.expenseItemsTableBody) {
       dom.expenseItemsTableBody.innerHTML = '';
       renderExpenseItemsTable();
@@ -2574,8 +2624,11 @@
     const file = e.target.files[0];
     if (!file) return;
 
+    state.currentReceiptFile = file;
+
     const reader = new FileReader();
     reader.onload = (event) => {
+      state.currentReceiptBase64 = event.target.result;
       if (dom.ocrPreviewImage) dom.ocrPreviewImage.src = event.target.result;
     };
     reader.readAsDataURL(file);
@@ -3165,6 +3218,19 @@
     }
 
     return items;
+  }
+
+  // ============================================
+  // RECEIPT PHOTO MODAL CONTROLLER
+  // ============================================
+  function openReceiptPhotoModal(imgUrl) {
+    if (!dom.receiptPhotoModal || !dom.receiptPhotoImg) return;
+    dom.receiptPhotoImg.src = imgUrl;
+    dom.receiptPhotoModal.style.display = 'flex';
+  }
+
+  function closeReceiptPhotoModal() {
+    if (dom.receiptPhotoModal) dom.receiptPhotoModal.style.display = 'none';
   }
 
 })();

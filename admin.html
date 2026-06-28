@@ -866,6 +866,16 @@
       </div>
     </div>
   </div>
+  <!-- RECEIPT PHOTO VIEW MODAL -->
+  <div class="modal-overlay" id="receiptPhotoModal" style="display: none; align-items: center; justify-content: center; z-index: 2000;">
+    <div class="modal-content" style="max-width: 600px; padding: 1.5rem; text-align: center; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); position: relative;">
+      <button class="modal-close" id="receiptPhotoModalClose" style="position: absolute; top: 10px; right: 15px; font-size: 1.8rem; background: none; border: none; color: var(--text-primary); cursor: pointer;">&times;</button>
+      <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--text-primary); font-size: 1.15rem; font-family: 'Inter', sans-serif;">Foto de Boleta / Comprobante</h3>
+      <div style="max-height: 70vh; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.5rem; background: rgba(0,0,0,0.03);">
+        <img id="receiptPhotoImg" src="" alt="Foto de Boleta" style="width: 100%; height: auto; max-height: 60vh; object-fit: contain; border-radius: 6px;">
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================ -->
   <!-- SCRIPTS -->
