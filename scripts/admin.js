@@ -104,8 +104,9 @@
     btnHistory: $('#btnHistory'),
     historyRangePicker: $('#historyRangePicker'),
     btnSearchHistory: $('#btnSearchHistory'),
-    historyResults: $('#historyResults'),
+    historyResultsTableBody: $('#historyResultsTableBody'),
     historyTotalRevenue: $('#historyTotalRevenue'),
+    historyOrdersCount: $('#historyOrdersCount'),
     
     // Section Views
     ordersSection: $('#ordersSection'),
@@ -1581,7 +1582,9 @@
 
   async function fetchHistory() {
     if (!firebaseReady || !db || !state.firestoreModule) {
-      dom.historyResults.innerHTML = '<div style="color:red; text-align:center;">Firebase no está conectado</div>';
+      if (dom.historyResultsTableBody) {
+        dom.historyResultsTableBody.innerHTML = '<tr><td colspan="6" style="color:red; text-align:center; padding: 2rem;">Firebase no está conectado</td></tr>';
+      }
       return;
     }
     
@@ -1592,7 +1595,9 @@
       startDate = state.historyPicker.selectedDates[0];
       endDate = state.historyPicker.selectedDates[1] || new Date(startDate);
     } else {
-      dom.historyResults.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Por favor selecciona un rango de fechas.</div>';
+      if (dom.historyResultsTableBody) {
+        dom.historyResultsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Por favor selecciona un rango de fechas.</td></tr>';
+      }
       return;
     }
     
@@ -1628,11 +1633,15 @@
         }
         
         if (orderDate && orderDate >= startLimit && orderDate <= endLimit) {
-          ordersList.push({
-            id: docSnap.id,
-            dateObj: orderDate,
-            ...data
-          });
+          const status = (data.status || '').toLowerCase().trim();
+          if (status === 'entregado' || status === 'delivered') {
+            ordersList.push({
+              id: docSnap.id,
+              dateObj: orderDate,
+              ...data
+            });
+            totalRev += (data.total || data.totals?.finalTotal || 0);
+          }
         }
       });
       
@@ -1641,55 +1650,50 @@
       let html = '';
       
       if (ordersList.length === 0) {
-        html = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay ventas en estas fechas.</div>';
+        html = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+              No se encontraron ventas entregadas en este rango de fechas.
+            </td>
+          </tr>
+        `;
       } else {
         ordersList.forEach(data => {
-          const status = (data.status || '').toLowerCase().trim();
-          
-          if (status === 'entregado' || status === 'delivered') {
-            totalRev += (data.total || data.totals?.finalTotal || 0);
-          }
-          
           const dateStr = data.dateObj.toLocaleString('es-CL');
-          const productsStr = (data.cart || []).map(p => `${p.quantity}x ${p.name}`).join(', ');
+          const productsStr = (data.cart || []).map(p => `<strong>${p.quantity}x</strong> ${p.name}`).join('<br>');
           const cust = data.customer || {};
+          const customerHtml = `
+            <div style="font-weight: 600;">${cust.name || 'Sin nombre'}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">📞 ${cust.phone || 'Sin tel'}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${cust.address || 'Retiro en local'}">📍 ${cust.address || 'Retiro en local'}</div>
+          `;
           
-          const statusColors = {
-            'pending': 'var(--warning)',
-            'preparing': 'var(--accent)',
-            'on_the_way': '#3b82f6',
-            'delivered': 'var(--success)',
-            'entregado': 'var(--success)',
-            'canceled': 'var(--error)',
-            'cancelado': 'var(--error)'
-          };
-          const statusColor = statusColors[status] || 'var(--text-secondary)';
+          const payMethod = (data.payment?.method || 'Efectivo').toUpperCase();
+          const orderTotal = (data.total || data.totals?.finalTotal || 0);
           
-          const friendlyStatus = status === 'delivered' || status === 'entregado' ? 'ENTREGADO' : 
-                                 status === 'canceled' || status === 'cancelado' ? 'CANCELADO' : 
-                                 status.toUpperCase();
-
           html += `
-          <div style="background: var(--bg-elevated); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 0.95rem; margin-bottom: 0.8rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <strong>Pedido #${data.orderNumber || 'LD-Manual'}</strong>
-              <span style="color: ${statusColor}; font-weight: bold; text-transform: uppercase; font-size: 0.8rem;">${friendlyStatus}</span>
-            </div>
-            <div style="margin-bottom: 0.5rem; color: var(--text-secondary);">📅 ${dateStr}</div>
-            <div style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${cust.name || 'Sin nombre'} | 📞 ${cust.phone || 'Sin tel'}</div>
-            <div style="margin-bottom: 0.5rem;"><strong>Dir:</strong> ${cust.address || 'Retiro en local'} ${cust.reference ? `(${cust.reference})` : ''}</div>
-            <div style="margin-bottom: 0.5rem; color: var(--gold);">🛒 ${productsStr}</div>
-            <div style="text-align: right; font-weight: bold; font-size: 1.1rem;">Total: $${(data.total || data.totals?.finalTotal || 0).toLocaleString('es-CL')}</div>
-          </div>`;
+            <tr>
+              <td style="font-weight: 700; color: var(--gold); font-family: monospace; font-size: 0.9rem;">#${data.orderNumber || 'MANUAL'}</td>
+              <td style="font-size: 0.8rem; white-space: nowrap;">${dateStr}</td>
+              <td>${customerHtml}</td>
+              <td style="line-height: 1.4; font-size: 0.8rem;">${productsStr}</td>
+              <td style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">${payMethod}</td>
+              <td style="text-align: right; font-weight: 700; color: var(--gold); font-family: 'Inter', sans-serif; font-size: 0.9rem;">$${orderTotal.toLocaleString('es-CL')}</td>
+            </tr>
+          `;
         });
       }
       
-      dom.historyResults.innerHTML = html;
-      dom.historyTotalRevenue.innerText = `$${totalRev.toLocaleString('es-CL')}`;
+      if (dom.historyResultsTableBody) dom.historyResultsTableBody.innerHTML = html;
+      if (dom.historyTotalRevenue) dom.historyTotalRevenue.innerText = `$${totalRev.toLocaleString('es-CL')}`;
+      if (dom.historyOrdersCount) dom.historyOrdersCount.innerText = ordersList.length;
       
     } catch (error) {
       console.error("Error fetching history:", error);
-      dom.historyResults.innerHTML = '<div style="color:red; text-align:center;">Error al buscar: ' + error.message + '</div>';
+      if (dom.historyResultsTableBody) {
+        dom.historyResultsTableBody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center; padding: 2rem;">Error al buscar: ${error.message}</td></tr>`;
+      }
     }
     
     dom.btnSearchHistory.innerText = "Buscar Ventas";
