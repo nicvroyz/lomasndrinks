@@ -491,6 +491,26 @@ ul, ol {
   flex-wrap: wrap;
 }
 
+.hero-schedule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(220, 163, 17, 0.35);
+  color: var(--gold);
+  padding: 0.55rem 1.4rem;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: fadeInUp 0.8s ease 0.52s both, schedulePulse 3s ease-in-out infinite;
+}
+
+@keyframes schedulePulse {
+  0%, 100% { border-color: rgba(220, 163, 17, 0.35); box-shadow: 0 0 0 rgba(220, 163, 17, 0); }
+  50% { border-color: rgba(220, 163, 17, 0.6); box-shadow: 0 0 18px rgba(220, 163, 17, 0.1); }
+}
+
 .hero-trust {
   display: flex;
   gap: var(--space-xl);
@@ -1610,6 +1630,12 @@ textarea.form-input {
   
   .hero-ctas .btn {
     width: 100%;
+  }
+
+  .hero-schedule-badge {
+    font-size: 0.82rem;
+    padding: 0.45rem 1rem;
+    text-align: center;
   }
   
   .hero-trust {
