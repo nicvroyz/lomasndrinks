@@ -19,7 +19,7 @@
     firestoreModule: null,
     productCosts: {},
     expenses: [],
-    initialInvestment: 1000000,
+    initialInvestment: 65000,
     charts: {},
   };
 
@@ -2053,16 +2053,16 @@
           scales: {
             y: {
               beginAtZero: true,
-              grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: '#888' }
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { color: '#555' }
             },
             x: {
-              grid: { color: 'rgba(255,255,255,0.02)' },
-              ticks: { color: '#888' }
+              grid: { color: 'rgba(0,0,0,0.03)' },
+              ticks: { color: '#555' }
             }
           },
           plugins: {
-            legend: { labels: { color: '#bbb' } }
+            legend: { labels: { color: '#444' } }
           }
         }
       });
@@ -2092,9 +2092,9 @@
           labels: finalLabels,
           datasets: [{
             data: finalData,
-            backgroundColor: finalLabels[0] === 'Sin Gastos' ? ['rgba(255,255,255,0.05)'] : colors.slice(0, finalLabels.length),
+            backgroundColor: finalLabels[0] === 'Sin Gastos' ? ['rgba(0,0,0,0.05)'] : colors.slice(0, finalLabels.length),
             borderWidth: 1,
-            borderColor: 'rgba(0,0,0,0.5)'
+            borderColor: 'rgba(0,0,0,0.1)'
           }]
         },
         options: {
@@ -2103,7 +2103,7 @@
           plugins: {
             legend: { 
               position: 'right',
-              labels: { color: '#bbb', font: { size: 10 } } 
+              labels: { color: '#444', font: { size: 10 } } 
             }
           }
         }
