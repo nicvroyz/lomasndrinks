@@ -19,6 +19,7 @@
     firestoreModule: null,
     productCosts: {},
     expenses: [],
+    inventory: [],
     initialInvestment: 65000,
     charts: {},
   };
@@ -122,6 +123,7 @@
     finNetProfitCard: $('#finNetProfitCard'),
     finInitialInvestment: $('#finInitialInvestment'),
     finROI: $('#finROI'),
+    finInventoryValue: $('#finInventoryValue'),
     
     // AI Accountant
     aiAlertsList: $('#aiAlertsList'),
@@ -148,7 +150,24 @@
     expAmount: $('#expAmount'),
     btnCancelExpense: $('#btnCancelExpense'),
     btnSaveExpense: $('#btnSaveExpense'),
-    expensesTableBody: $('#expensesTableBody')
+    expensesTableBody: $('#expensesTableBody'),
+
+    // Detailed Expense Items & Supplies Inventory
+    btnAddExpenseItem: $('#btnAddExpenseItem'),
+    expenseItemsTableBody: $('#expenseItemsTableBody'),
+    inventoryTableBody: $('#inventoryTableBody'),
+    btnOpenAdjustInventory: $('#btnOpenAdjustInventory'),
+    inventoryModal: $('#inventoryModal'),
+    inventoryModalClose: $('#inventoryModalClose'),
+    invAdjustSelect: $('#invAdjustSelect'),
+    invAdjustType: $('#invAdjustType'),
+    invAdjustQty: $('#invAdjustQty'),
+    invAdjustCost: $('#invAdjustCost'),
+    newSupplyName: $('#newSupplyName'),
+    newSupplyNameGroup: $('#newSupplyNameGroup'),
+    invAdjustComment: $('#invAdjustComment'),
+    btnCancelInventory: $('#btnCancelInventory'),
+    btnSaveInventoryAdjustment: $('#btnSaveInventoryAdjustment')
   };
 
   // ---- Status Labels ----
@@ -1121,7 +1140,51 @@
           return;
         }
         
-        saveExpense(date, provider, detail, amount);
+        const items = getExpenseItemsList();
+        saveExpense(date, provider, detail, amount, items);
+      });
+    }
+
+    if (dom.btnAddExpenseItem) {
+      dom.btnAddExpenseItem.addEventListener('click', () => {
+        addExpenseItemRow();
+      });
+    }
+
+    if (dom.btnOpenAdjustInventory) {
+      dom.btnOpenAdjustInventory.addEventListener('click', openInventoryModal);
+    }
+
+    if (dom.inventoryModalClose) {
+      dom.inventoryModalClose.addEventListener('click', closeInventoryModal);
+    }
+
+    if (dom.btnCancelInventory) {
+      dom.btnCancelInventory.addEventListener('click', closeInventoryModal);
+    }
+
+    if (dom.btnSaveInventoryAdjustment) {
+      dom.btnSaveInventoryAdjustment.addEventListener('click', saveInventoryAdjustment);
+    }
+
+    if (dom.invAdjustSelect) {
+      dom.invAdjustSelect.addEventListener('change', (e) => {
+        if (e.target.value === '__new__') {
+          if (dom.newSupplyNameGroup) dom.newSupplyNameGroup.style.display = 'block';
+          if (dom.invCostGroup) dom.invCostGroup.style.display = 'block';
+        } else {
+          if (dom.newSupplyNameGroup) dom.newSupplyNameGroup.style.display = 'none';
+        }
+      });
+    }
+
+    if (dom.invAdjustType) {
+      dom.invAdjustType.addEventListener('change', (e) => {
+        if (e.target.value === 'consume') {
+          if (dom.invCostGroup) dom.invCostGroup.style.display = 'none';
+        } else {
+          if (dom.invCostGroup) dom.invCostGroup.style.display = 'block';
+        }
       });
     }
 
@@ -1650,7 +1713,18 @@
       });
       state.expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // 3. Load initial investment from localStorage
+      // 3. Fetch Inventory
+      const inventorySnapshot = await getDocs(collection(db, 'supplies_inventory'));
+      state.inventory = [];
+      inventorySnapshot.forEach(doc => {
+        state.inventory.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+
+      // 4. Load initial investment from localStorage
       const savedInvestment = localStorage.getItem('lomas_initial_investment');
       if (savedInvestment) {
         state.initialInvestment = parseFloat(savedInvestment);
@@ -1662,6 +1736,8 @@
       // Populate views
       renderProductCostsTable();
       renderExpensesTable();
+      renderInventoryTable();
+      renderInventorySelectOptions();
       updateFinanceMetrics();
       runAiAccountantAudit();
     } catch (err) {
@@ -1691,6 +1767,13 @@
       { id: 'exp4', date: formatDateYMD(new Date(Date.now() - 691200000)), provider: 'Meta Ads', detail: 'Publicidad Instagram campañas preventa', amount: 50000 }
     ];
 
+    state.inventory = [
+      { id: 'inv1', name: 'Gin Boolton Royal 1L', stock: 12, cost: 4590, updatedAt: formatDateYMD(new Date(Date.now() - 86400000)) },
+      { id: 'inv2', name: 'Pisco Alto del Carmen 35° 1L', stock: 18, cost: 5800, updatedAt: formatDateYMD(new Date(Date.now() - 172800000)) },
+      { id: 'inv3', name: 'Tónica Fever Tree 200ml', stock: 48, cost: 950, updatedAt: formatDateYMD(new Date(Date.now() - 86400000)) },
+      { id: 'inv4', name: 'Vaso Plástico Transparente 500cc', stock: 250, cost: 85, updatedAt: formatDateYMD(new Date(Date.now() - 172800000)) }
+    ];
+
     const savedInvestment = localStorage.getItem('lomas_initial_investment');
     if (savedInvestment) {
       state.initialInvestment = parseFloat(savedInvestment);
@@ -1701,6 +1784,8 @@
 
     renderProductCostsTable();
     renderExpensesTable();
+    renderInventoryTable();
+    renderInventorySelectOptions();
     updateFinanceMetrics();
     runAiAccountantAudit();
   }
@@ -1786,12 +1871,13 @@
   // ============================================
   // EXPENSES MANAGEMENT
   // ============================================
-  async function saveExpense(date, provider, detail, amount) {
+  async function saveExpense(date, provider, detail, amount, items = []) {
     const expData = {
       date,
       provider,
       detail,
       amount: parseInt(amount) || 0,
+      items: items,
       createdAt: new Date()
     };
 
@@ -1803,13 +1889,16 @@
           id: docRef.id,
           ...expData
         });
+        await saveSuppliesFromExpense(items, date);
       } catch (err) {
         console.error('Error saving expense to Firestore:', err);
         alert('Error al conectar con la base de datos, se guardará localmente.');
         state.expenses.unshift({ id: 'local-' + Date.now(), ...expData });
+        saveDemoSuppliesFromExpense(items, date);
       }
     } else {
       state.expenses.unshift({ id: 'demo-' + Date.now(), ...expData });
+      saveDemoSuppliesFromExpense(items, date);
     }
 
     renderExpensesTable();
@@ -1882,6 +1971,10 @@
     dom.expProvider.value = '';
     dom.expDetail.value = '';
     dom.expAmount.value = '';
+    if (dom.expenseItemsTableBody) {
+      dom.expenseItemsTableBody.innerHTML = '';
+      renderExpenseItemsTable();
+    }
   }
 
   // ============================================
@@ -1930,18 +2023,13 @@
     // 6. ROI
     const roi = state.initialInvestment > 0 ? (netProfit / state.initialInvestment) * 100 : 0;
 
+    // Calculate Inventory Value
+    const inventoryValue = state.inventory.reduce((sum, item) => sum + (parseFloat(item.stock || 0) * parseFloat(item.cost || 0)), 0);
+
     // Update HTML values
     if (dom.finGrossRevenue) dom.finGrossRevenue.textContent = `$${grossRevenue.toLocaleString('es-CL')}`;
-    if (dom.finCOGS) dom.finCOGS.textContent = `$${cogs.toLocaleString('es-CL')}`;
-    
-    if (dom.finGrossMargin) {
-      dom.finGrossMargin.textContent = `$${grossMargin.toLocaleString('es-CL')}`;
-      dom.finGrossMarginPct.textContent = `${grossMargin >= 0 ? '+' : ''}${grossMarginPct.toFixed(1)}%`;
-      dom.finGrossMarginPct.className = `kpi-percentage-finance ${grossMargin >= 0 ? 'profit-text' : 'loss-text'}`;
-      dom.finGrossMarginCard.className = `kpi-card-finance ${grossMargin >= 0 ? 'profit' : 'loss'}`;
-    }
-
     if (dom.finOpEx) dom.finOpEx.textContent = `$${opex.toLocaleString('es-CL')}`;
+    if (dom.finInventoryValue) dom.finInventoryValue.textContent = `$${Math.round(inventoryValue).toLocaleString('es-CL')}`;
     
     if (dom.finNetProfit) {
       dom.finNetProfit.textContent = `$${netProfit.toLocaleString('es-CL')}`;
@@ -2442,6 +2530,17 @@
         dom.expDetail.value = extracted.detail || 'Insumos y mercadería';
         dom.expAmount.value = extracted.amount || '';
 
+        // Extract sub-items from OCR text
+        const items = parseOCRLineItems(text);
+        dom.expenseItemsTableBody.innerHTML = '';
+        if (items.length > 0) {
+          items.forEach(item => {
+            addExpenseItemRow(item.name, item.qty, item.price);
+          });
+        } else {
+          renderExpenseItemsTable();
+        }
+
         dom.ocrProgressContainer.style.display = 'none';
         dom.expenseForm.style.display = 'block';
       }).catch(err => {
@@ -2552,6 +2651,435 @@
     if (day.length < 2) day = '0' + day;
 
     return [year, month, day].join('-');
+  }
+
+  // ============================================
+  // SUPPLIES INVENTORY & ADJUSTMENTS CONTROLLERS
+  // ============================================
+  function renderInventoryTable() {
+    if (!dom.inventoryTableBody) return;
+    
+    if (state.inventory.length === 0) {
+      dom.inventoryTableBody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+            No hay insumos registrados. Sube boletas de compras para poblar el inventario.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    let html = '';
+    state.inventory.forEach(item => {
+      const totalValue = item.stock * item.cost;
+      html += `
+        <tr>
+          <td style="font-weight:600; color:var(--text-primary);">${item.name}</td>
+          <td style="font-weight:700; color:var(--gold);">${parseFloat(item.stock).toFixed(1).replace(/\.0$/, '')} unidades</td>
+          <td>$${Math.round(item.cost).toLocaleString('es-CL')}</td>
+          <td style="font-weight:600;">$${Math.round(totalValue).toLocaleString('es-CL')}</td>
+          <td style="color:var(--text-secondary); font-size:0.8rem;">${item.updatedAt || 'Sin fecha'}</td>
+        </tr>
+      `;
+    });
+    dom.inventoryTableBody.innerHTML = html;
+  }
+
+  function renderInventorySelectOptions() {
+    if (!dom.invAdjustSelect) return;
+    
+    let html = '<option value="">-- Seleccionar Insumo --</option>';
+    html += '<option value="__new__">🆕 [Nuevo Insumo / Ingrediente]</option>';
+    
+    state.inventory.forEach(item => {
+      html += `<option value="${item.id}">${item.name} (Stock: ${parseFloat(item.stock).toFixed(1).replace(/\.0$/, '')})</option>`;
+    });
+    
+    dom.invAdjustSelect.innerHTML = html;
+  }
+
+  function openInventoryModal() {
+    if (!dom.inventoryModal) return;
+    renderInventorySelectOptions();
+    dom.invAdjustSelect.value = '';
+    dom.invAdjustType.value = 'set';
+    dom.invAdjustQty.value = '';
+    dom.invAdjustCost.value = '';
+    dom.invAdjustComment.value = '';
+    dom.newSupplyNameGroup.style.display = 'none';
+    dom.newSupplyName.value = '';
+    dom.invCostGroup.style.display = 'block';
+    dom.inventoryModal.style.display = 'flex';
+  }
+
+  function closeInventoryModal() {
+    if (dom.inventoryModal) dom.inventoryModal.style.display = 'none';
+  }
+
+  async function saveSuppliesFromExpense(items, date) {
+    if (!firebaseReady || !db || !state.firestoreModule) return;
+    const { doc, getDoc, setDoc } = state.firestoreModule;
+
+    for (const item of items) {
+      const normalizedId = item.name.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+        
+      if (!normalizedId) continue;
+      
+      const docRef = doc(db, 'supplies_inventory', normalizedId);
+      const docSnap = await getDoc(docRef);
+      
+      let currentStock = 0;
+      let currentCost = 0;
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        currentStock = parseFloat(data.stock || 0);
+        currentCost = parseFloat(data.cost || 0);
+      }
+      
+      const purchasedQty = parseFloat(item.qty) || 0;
+      const purchasedCost = parseFloat(item.price) || 0;
+      
+      const newStock = currentStock + purchasedQty;
+      
+      let newCost = purchasedCost;
+      if (currentStock > 0 && newStock > 0) {
+        newCost = (currentStock * currentCost + purchasedQty * purchasedCost) / newStock;
+      }
+      
+      const supplyData = {
+        name: docSnap.exists() ? docSnap.data().name : item.name,
+        stock: newStock,
+        cost: Math.round(newCost),
+        updatedAt: date
+      };
+      
+      await setDoc(docRef, supplyData, { merge: true });
+      
+      const localItemIndex = state.inventory.findIndex(i => i.id === normalizedId);
+      if (localItemIndex > -1) {
+        state.inventory[localItemIndex] = { id: normalizedId, ...supplyData };
+      } else {
+        state.inventory.push({ id: normalizedId, ...supplyData });
+      }
+    }
+    
+    state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+    renderInventoryTable();
+    renderInventorySelectOptions();
+  }
+
+  function saveDemoSuppliesFromExpense(items, date) {
+    for (const item of items) {
+      const normalizedId = item.name.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+        
+      if (!normalizedId) continue;
+      
+      const localItemIndex = state.inventory.findIndex(i => i.id === normalizedId);
+      let currentStock = 0;
+      let currentCost = 0;
+      let name = item.name;
+      
+      if (localItemIndex > -1) {
+        const existing = state.inventory[localItemIndex];
+        currentStock = parseFloat(existing.stock || 0);
+        currentCost = parseFloat(existing.cost || 0);
+        name = existing.name;
+      }
+      
+      const purchasedQty = parseFloat(item.qty) || 0;
+      const purchasedCost = parseFloat(item.price) || 0;
+      const newStock = currentStock + purchasedQty;
+      
+      let newCost = purchasedCost;
+      if (currentStock > 0 && newStock > 0) {
+        newCost = (currentStock * currentCost + purchasedQty * purchasedCost) / newStock;
+      }
+      
+      const supplyData = {
+        name,
+        stock: newStock,
+        cost: Math.round(newCost),
+        updatedAt: date
+      };
+      
+      if (localItemIndex > -1) {
+        state.inventory[localItemIndex] = { id: normalizedId, ...supplyData };
+      } else {
+        state.inventory.push({ id: normalizedId, ...supplyData });
+      }
+    }
+    
+    state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+    renderInventoryTable();
+    renderInventorySelectOptions();
+  }
+
+  async function saveInventoryAdjustment() {
+    const supplyId = dom.invAdjustSelect.value;
+    const adjustType = dom.invAdjustType.value;
+    const qty = parseFloat(dom.invAdjustQty.value) || 0;
+    const cost = parseInt(dom.invAdjustCost.value) || 0;
+    const comment = dom.invAdjustComment.value.trim();
+    
+    if (!supplyId || qty <= 0 || !comment) {
+      alert('Por favor completa todos los campos del ajuste.');
+      return;
+    }
+    
+    let targetId = supplyId;
+    let name = '';
+    
+    if (supplyId === '__new__') {
+      name = dom.newSupplyName.value.trim();
+      if (!name) {
+        alert('Por favor escribe el nombre del nuevo insumo.');
+        return;
+      }
+      targetId = name.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    } else {
+      const existing = state.inventory.find(i => i.id === supplyId);
+      if (existing) name = existing.name;
+    }
+
+    const todayStr = formatDateYMD(new Date());
+    
+    const existingIndex = state.inventory.findIndex(i => i.id === targetId);
+    let currentStock = 0;
+    let currentCost = cost;
+    
+    if (existingIndex > -1) {
+      currentStock = parseFloat(state.inventory[existingIndex].stock || 0);
+      if (cost <= 0) {
+        currentCost = parseFloat(state.inventory[existingIndex].cost || 0);
+      }
+    }
+    
+    let newStock = currentStock;
+    if (adjustType === 'set') {
+      newStock = qty;
+    } else if (adjustType === 'add') {
+      newStock = currentStock + qty;
+    } else if (adjustType === 'consume') {
+      newStock = Math.max(0, currentStock - qty);
+    }
+    
+    const supplyData = {
+      name: name,
+      stock: newStock,
+      cost: currentCost,
+      updatedAt: todayStr
+    };
+
+    const btn = dom.btnSaveInventoryAdjustment;
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      if (firebaseReady && db && state.firestoreModule) {
+        const { doc, setDoc } = state.firestoreModule;
+        await setDoc(doc(db, 'supplies_inventory', targetId), supplyData, { merge: true });
+        
+        const { collection, addDoc } = state.firestoreModule;
+        await addDoc(collection(db, 'inventory_adjustments'), {
+          supplyId: targetId,
+          supplyName: name,
+          type: adjustType,
+          qty: qty,
+          newStock: newStock,
+          comment: comment,
+          createdAt: new Date()
+        });
+      }
+
+      if (existingIndex > -1) {
+        state.inventory[existingIndex] = { id: targetId, ...supplyData };
+      } else {
+        state.inventory.push({ id: targetId, ...supplyData });
+      }
+
+      state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+      renderInventoryTable();
+      renderInventorySelectOptions();
+      
+      closeInventoryModal();
+      alert('Inventario actualizado correctamente.');
+    } catch (err) {
+      console.error('Error applying inventory adjustment:', err);
+      alert('Error: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Aplicar Ajuste';
+    }
+  }
+
+  // ============================================
+  // DETAILED EXPENSE ITEMS FORM TABLE
+  // ============================================
+  function renderExpenseItemsTable() {
+    if (!dom.expenseItemsTableBody) return;
+    
+    const rows = dom.expenseItemsTableBody.querySelectorAll('tr');
+    if (rows.length === 0) {
+      dom.expenseItemsTableBody.innerHTML = `
+        <tr class="empty-items-row">
+          <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 1rem;">
+            Ningún insumo detallado. Agrégalos para sumarlos al inventario.
+          </td>
+        </tr>
+      `;
+    }
+  }
+
+  function addExpenseItemRow(name = '', qty = 1, price = '') {
+    if (!dom.expenseItemsTableBody) return;
+    
+    const emptyRow = dom.expenseItemsTableBody.querySelector('.empty-items-row');
+    if (emptyRow) emptyRow.remove();
+
+    const rowId = 'row-' + Date.now() + '-' + Math.round(Math.random()*1000);
+    const row = document.createElement('tr');
+    row.id = rowId;
+    row.className = 'expense-item-row';
+    
+    row.innerHTML = `
+      <td>
+        <input type="text" class="exp-item-name" value="${name}" placeholder="Ej: Gin Boolton 1L" style="width:100%; font-size:0.8rem; padding:4px;" required>
+      </td>
+      <td>
+        <input type="number" class="exp-item-qty" value="${qty}" min="0.1" step="any" style="width:100%; font-size:0.8rem; padding:4px; text-align:center;" required>
+      </td>
+      <td>
+        <input type="number" class="exp-item-price" value="${price}" min="0" placeholder="4590" style="width:100%; font-size:0.8rem; padding:4px;" required>
+      </td>
+      <td class="exp-item-total" style="font-weight:600; padding:6px 4px; font-size:0.8rem; text-align:right;">
+        $${Math.round(qty * (price || 0)).toLocaleString('es-CL')}
+      </td>
+      <td style="text-align:center;">
+        <button type="button" class="btn-delete-item-row" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:1.15rem; padding:0; line-height:1;">×</button>
+      </td>
+    `;
+    
+    dom.expenseItemsTableBody.appendChild(row);
+
+    const inputQty = row.querySelector('.exp-item-qty');
+    const inputPrice = row.querySelector('.exp-item-price');
+    const totalCell = row.querySelector('.exp-item-total');
+
+    const updateRowTotal = () => {
+      const q = parseFloat(inputQty.value) || 0;
+      const p = parseInt(inputPrice.value) || 0;
+      const tot = q * p;
+      totalCell.textContent = `$${Math.round(tot).toLocaleString('es-CL')}`;
+      updateExpenseTotalFromItems();
+    };
+
+    inputQty.addEventListener('input', updateRowTotal);
+    inputPrice.addEventListener('input', updateRowTotal);
+
+    row.querySelector('.btn-delete-item-row').addEventListener('click', () => {
+      row.remove();
+      renderExpenseItemsTable();
+      updateExpenseTotalFromItems();
+    });
+
+    updateExpenseTotalFromItems();
+  }
+
+  function updateExpenseTotalFromItems() {
+    if (!dom.expenseItemsTableBody || !dom.expAmount) return;
+    
+    const rows = dom.expenseItemsTableBody.querySelectorAll('.expense-item-row');
+    if (rows.length === 0) return;
+    
+    let sum = 0;
+    rows.forEach(row => {
+      const q = parseFloat(row.querySelector('.exp-item-qty').value) || 0;
+      const p = parseInt(row.querySelector('.exp-item-price').value) || 0;
+      sum += q * p;
+    });
+    
+    dom.expAmount.value = sum;
+  }
+
+  function getExpenseItemsList() {
+    const items = [];
+    if (!dom.expenseItemsTableBody) return items;
+    
+    const rows = dom.expenseItemsTableBody.querySelectorAll('.expense-item-row');
+    rows.forEach(row => {
+      const name = row.querySelector('.exp-item-name').value.trim();
+      const qty = parseFloat(row.querySelector('.exp-item-qty').value) || 0;
+      const price = parseInt(row.querySelector('.exp-item-price').value) || 0;
+      
+      if (name && qty > 0 && price > 0) {
+        items.push({
+          name: name,
+          qty: qty,
+          price: price
+        });
+      }
+    });
+    return items;
+  }
+
+  function parseOCRLineItems(text) {
+    const items = [];
+    const lines = text.split('\n');
+    
+    // Pattern like "3 X 1L GIN BOOLTON ROYAL $4.590 C/U" or "3 X GIN BOOLTON $4590"
+    const regex = /(\d+)\s*[xX]\s*([^$0-9\n]+)(?:\$?|\s*)\s*([\d.,]+)/;
+
+    lines.forEach(line => {
+      const match = line.match(regex);
+      if (match) {
+        const qty = parseFloat(match[1]);
+        let name = match[2].trim()
+          .replace(/c\/u|cu|unitario|unit|val|tot/gi, '')
+          .replace(/[-_.*]/g, '')
+          .trim();
+        let priceRaw = match[3].replace(/[.,]/g, '');
+        const price = parseInt(priceRaw) || 0;
+        
+        if (qty > 0 && name.length > 2 && price > 0) {
+          items.push({
+            name: name,
+            qty: qty,
+            price: price
+          });
+        }
+      }
+    });
+
+    if (items.length === 0) {
+      lines.forEach(line => {
+        const parts = line.split(/[$]/);
+        if (parts.length > 1) {
+          const namePart = parts[0].trim().replace(/\d+$/, '').trim();
+          const pricePart = parts[1].replace(/[^\d]/g, '');
+          const price = parseInt(pricePart) || 0;
+          if (namePart.length > 3 && price > 100) {
+            items.push({
+              name: namePart,
+              qty: 1,
+              price: price
+            });
+          }
+        }
+      });
+    }
+
+    return items;
   }
 
 })();

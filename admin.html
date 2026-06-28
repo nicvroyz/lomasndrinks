@@ -282,60 +282,50 @@
   <!-- ============================================ -->
   <div id="accountingSection" class="admin-section-container" style="display: none;">
     
-    <!-- 1. KPI Grid (Corporate Finance Indicators) -->
+    <!-- 1. KPI Grid (Simple Finance Indicators) -->
     <div class="finance-kpi-grid">
       
-      <!-- Gross Revenue -->
+      <!-- Ventas Totales (Ingresos) -->
       <div class="kpi-card-finance">
         <div class="kpi-icon-finance">💰</div>
         <div class="kpi-details-finance">
-          <span class="kpi-title-finance">Ingresos Brutos</span>
+          <span class="kpi-title-finance">Dinero Ingresado</span>
           <span class="kpi-value-finance" id="finGrossRevenue">$0</span>
-          <span class="kpi-subtitle-finance">Ventas acumuladas</span>
+          <span class="kpi-subtitle-finance">Total ventas cobradas</span>
         </div>
       </div>
       
-      <!-- COGS -->
-      <div class="kpi-card-finance">
-        <div class="kpi-icon-finance">📦</div>
-        <div class="kpi-details-finance">
-          <span class="kpi-title-finance">Costo de Ventas (COGS)</span>
-          <span class="kpi-value-finance" id="finCOGS">$0</span>
-          <span class="kpi-subtitle-finance">Costo de mercadería</span>
-        </div>
-      </div>
-      
-      <!-- Gross Margin -->
-      <div class="kpi-card-finance" id="finGrossMarginCard">
-        <div class="kpi-icon-finance">📈</div>
-        <div class="kpi-details-finance">
-          <span class="kpi-title-finance">Margen Bruto</span>
-          <span class="kpi-value-finance" id="finGrossMargin">$0</span>
-          <span class="kpi-percentage-finance" id="finGrossMarginPct">0%</span>
-        </div>
-      </div>
-      
-      <!-- OpEx -->
+      <!-- Gastos Totales (Egresos) -->
       <div class="kpi-card-finance">
         <div class="kpi-icon-finance">💸</div>
         <div class="kpi-details-finance">
-          <span class="kpi-title-finance">Gastos Operacionales (OpEx)</span>
+          <span class="kpi-title-finance">Dinero Gastado</span>
           <span class="kpi-value-finance" id="finOpEx">$0</span>
-          <span class="kpi-subtitle-finance">Boletas y facturas cargadas</span>
+          <span class="kpi-subtitle-finance">Insumos y gastos en boletas</span>
         </div>
       </div>
       
-      <!-- Net Profit -->
+      <!-- Ganancia Real -->
       <div class="kpi-card-finance" id="finNetProfitCard">
         <div class="kpi-icon-finance">⚖️</div>
         <div class="kpi-details-finance">
-          <span class="kpi-title-finance">Utilidad Neta</span>
+          <span class="kpi-title-finance">Ganancia Real</span>
           <span class="kpi-value-finance" id="finNetProfit">$0</span>
           <span class="kpi-percentage-finance" id="finNetProfitPct">0%</span>
         </div>
       </div>
+
+      <!-- Valor de Inventario -->
+      <div class="kpi-card-finance">
+        <div class="kpi-icon-finance">📦</div>
+        <div class="kpi-details-finance">
+          <span class="kpi-title-finance">Valor del Inventario</span>
+          <span class="kpi-value-finance" id="finInventoryValue">$0</span>
+          <span class="kpi-subtitle-finance">Inversión en insumos en stock</span>
+        </div>
+      </div>
       
-      <!-- Investment and ROI -->
+      <!-- Inversión Inicial -->
       <div class="kpi-card-finance">
         <div class="kpi-icon-finance">🏦</div>
         <div class="kpi-details-finance">
@@ -494,6 +484,36 @@
               <input type="number" id="expAmount" min="0" placeholder="Monto final pagado" required>
             </div>
           </div>
+
+          <!-- Detailed Expense Items (Invoice lines decomposition) -->
+          <div style="margin-top: 1.2rem; border-top: 1px dashed var(--border-subtle); padding-top: 1rem; margin-bottom: 1.2rem;">
+            <h5 style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px;">
+              Desglose de Ítems / Insumos de la Boleta
+            </h5>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 0.8rem 0;">
+              Ingresa los insumos/ingredientes para registrar e incrementar automáticamente el inventario.
+            </p>
+            <div class="table-responsive-wrapper" style="margin-bottom: 0.8rem; max-height: 180px; overflow-y: auto;">
+              <table class="finance-table" style="font-size: 0.8rem;">
+                <thead>
+                  <tr>
+                    <th>Nombre Ítem / Insumo</th>
+                    <th style="width: 70px;">Cant.</th>
+                    <th style="width: 90px;">Unit. ($)</th>
+                    <th style="width: 95px;">Total ($)</th>
+                    <th style="width: 35px; text-align: center;"></th>
+                  </tr>
+                </thead>
+                <tbody id="expenseItemsTableBody">
+                  <!-- Dynamic rows of items -->
+                </tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-action secondary" id="btnAddExpenseItem" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; display: inline-block; width: auto; min-width: auto; margin-bottom: 0.5rem;">
+              ➕ Agregar Ítem a Boleta
+            </button>
+          </div>
+
           <div class="form-actions-finance">
             <button type="button" class="btn btn-action secondary" id="btnCancelExpense" style="flex: 1; padding: 0.6rem;">Cancelar</button>
             <button type="button" class="btn btn-action primary" id="btnSaveExpense" style="flex: 2; padding: 0.6rem;">Guardar en Registro</button>
@@ -526,6 +546,42 @@
       </div>
 
     </div>
+
+      <!-- Supplies Inventory Card -->
+      <div class="accounting-card" style="margin-top: 2rem;">
+        <div class="card-header-flex">
+          <div>
+            <h3>Inventario de Insumos e Ingredientes</h3>
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">
+              Ingredientes e insumos de compras para componer los cócteles y productos en venta.
+            </p>
+          </div>
+          <button id="btnOpenAdjustInventory" class="btn btn-action secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            ⚙️ Ajustar Stock Manual
+          </button>
+        </div>
+        
+        <div class="table-responsive-wrapper">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Insumo / Ingrediente</th>
+                <th>Stock Disponible</th>
+                <th>Costo Promedio Unit.</th>
+                <th>Valorización Total Stock</th>
+                <th>Última Compra / Ajuste</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">
+                  No hay insumos registrados. Sube boletas de compras para poblar el inventario.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
   </div>
 
@@ -743,6 +799,61 @@
         <div id="historyResults" style="display: flex; flex-direction: column; gap: 1rem;">
           <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Selecciona un rango de fechas para buscar.</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- INVENTORY ADJUSTMENT MODAL -->
+  <!-- ============================================ -->
+  <div class="modal-overlay" id="inventoryModal" style="display: none; z-index: 9000;">
+    <div class="modal-content" style="max-width: 480px;">
+      <button class="modal-close" id="inventoryModalClose">&times;</button>
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.8rem; margin-bottom: 1.2rem;">
+        <h2 class="modal-title">Ajustar Inventario Manual</h2>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div class="form-group-finance">
+          <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Seleccionar Insumo / Ingrediente *</label>
+          <select id="invAdjustSelect" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;">
+            <!-- Options dynamically populated -->
+          </select>
+        </div>
+        
+        <!-- Field to create a new ingredient on the fly -->
+        <div class="form-group-finance" id="newSupplyNameGroup" style="display: none;">
+          <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Nombre del Nuevo Insumo *</label>
+          <input type="text" id="newSupplyName" placeholder="Ej: Vaso Plástico 500cc">
+        </div>
+
+        <div class="form-row-finance" style="display: flex; gap: 1rem;">
+          <div class="form-group-finance" style="flex: 1;">
+            <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Tipo de Ajuste *</label>
+            <select id="invAdjustType" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;">
+              <option value="set">Establecer Stock Fijo</option>
+              <option value="consume">Consumo / Merma (Resta)</option>
+              <option value="add">Entrada Manual (Suma)</option>
+            </select>
+          </div>
+          <div class="form-group-finance" style="flex: 1;">
+            <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Cantidad *</label>
+            <input type="number" id="invAdjustQty" min="0.1" step="any" placeholder="Ej: 3" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;" required>
+          </div>
+        </div>
+        
+        <div class="form-group-finance" id="invCostGroup">
+          <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Costo de Compra por Unidad ($) *</label>
+          <input type="number" id="invAdjustCost" min="0" placeholder="Ej: 4590" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;">
+        </div>
+
+        <div class="form-group-finance">
+          <label style="display: block; margin-bottom: 0.4rem; font-weight: 500; font-size: 0.85rem;">Motivo / Comentario *</label>
+          <input type="text" id="invAdjustComment" placeholder="Ej: Inventario inicial, merma por rotura" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-primary); color: var(--text-primary); outline: none;" required>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top: 1.5rem; display: flex; gap: 0.8rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+        <button type="button" class="btn btn-action secondary" id="btnCancelInventory" style="flex: 1; padding: 0.6rem;">Cancelar</button>
+        <button type="button" class="btn btn-action primary" id="btnSaveInventoryAdjustment" style="flex: 1.5; padding: 0.6rem;">Aplicar Ajuste</button>
       </div>
     </div>
   </div>
