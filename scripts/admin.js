@@ -25,17 +25,17 @@
   };
 
   const PRODUCTS = {
-    'tropiconce': { id: 'tropiconce', name: 'Tropiconce', price: 10000, image: 'assets/images/tropiconce.png' },
-    'pink-fantasy': { id: 'pink-fantasy', name: 'Pink Fantasy', price: 10000, image: 'assets/images/pink_fantasy.png' },
-    'promo-piscola': { id: 'promo-piscola', name: 'Promo Piscola Normal', price: 20000, image: 'assets/images/piscola.png' },
-    'promo-piscola-3l': { id: 'promo-piscola-3l', name: 'Promo Piscola Agrandada', price: 22000, image: 'assets/images/piscola.png' },
-    'promo-manzana': { id: 'promo-manzana', name: 'Promo Pisco Manzana', price: 27000, image: 'assets/images/manzana.png' },
-    'promo-manzana-3l': { id: 'promo-manzana-3l', name: 'Promo Manzana Agrandada', price: 29000, image: 'assets/images/manzana.png' },
-    'pack-escudo-silver': { id: 'pack-escudo-silver', name: 'Six Pack Escudo Silver', price: 7000, image: 'assets/images/escudo_silver.png' },
-    'pack-escudo': { id: 'pack-escudo', name: 'Six Pack Escudo', price: 9000, image: 'assets/images/escudo.png' },
-    'pack-cristal': { id: 'pack-cristal', name: 'Six Pack Cristal', price: 9000, image: 'assets/images/cristal.png' },
-    'pack-royal': { id: 'pack-royal', name: 'Six Pack Royal Guard', price: 10500, image: 'assets/images/royal.png' },
-    'pack-heineken': { id: 'pack-heineken', name: 'Six Pack Heineken', price: 10500, image: 'assets/images/heineken.png' }
+    'tropiconce': { id: 'tropiconce', name: 'Tropiconce', price: 9990, image: 'assets/images/tropiconce.png', active: true },
+    'pink-fantasy': { id: 'pink-fantasy', name: 'Pink Fantasy', price: 9990, image: 'assets/images/pink_fantasy.png', active: true },
+    'promo-piscola': { id: 'promo-piscola', name: 'Promo Piscola Normal', price: 20000, image: 'assets/images/piscola.png', active: false },
+    'promo-piscola-3l': { id: 'promo-piscola-3l', name: 'Promo Piscola Agrandada', price: 22000, image: 'assets/images/piscola.png', active: false },
+    'promo-manzana': { id: 'promo-manzana', name: 'Promo Pisco Manzana', price: 27000, image: 'assets/images/manzana.png', active: false },
+    'promo-manzana-3l': { id: 'promo-manzana-3l', name: 'Promo Manzana Agrandada', price: 29000, image: 'assets/images/manzana.png', active: false },
+    'pack-escudo-silver': { id: 'pack-escudo-silver', name: 'Six Pack Escudo Silver', price: 7000, image: 'assets/images/escudo_silver.png', active: false },
+    'pack-escudo': { id: 'pack-escudo', name: 'Six Pack Escudo', price: 9000, image: 'assets/images/escudo.png', active: false },
+    'pack-cristal': { id: 'pack-cristal', name: 'Six Pack Cristal', price: 9000, image: 'assets/images/cristal.png', active: false },
+    'pack-royal': { id: 'pack-royal', name: 'Six Pack Royal Guard', price: 10500, image: 'assets/images/royal.png', active: false },
+    'pack-heineken': { id: 'pack-heineken', name: 'Six Pack Heineken', price: 10500, image: 'assets/images/heineken.png', active: false }
   };
 
   // ---- DOM Cache ----
@@ -1271,6 +1271,7 @@
     dom.manProductsList.innerHTML = '';
     Object.keys(PRODUCTS).forEach(id => {
       const prod = PRODUCTS[id];
+      if (prod.active === false) return; // skip inactive products
       const qty = state.manualCart[id];
       
       const row = document.createElement('div');
@@ -1314,10 +1315,25 @@
   }
 
   function updateManualTotal() {
-    let subtotal = 0;
-    Object.keys(PRODUCTS).forEach(id => {
-      subtotal += PRODUCTS[id].price * state.manualCart[id];
+    let eligibleQty = 0;
+    let otherTotal = 0;
+    
+    Object.keys(state.manualCart).forEach(id => {
+      const qty = state.manualCart[id] || 0;
+      if (qty <= 0) return;
+      
+      if (id === 'tropiconce' || id === 'pink-fantasy') {
+        eligibleQty += qty;
+      } else {
+        otherTotal += PRODUCTS[id].price * qty;
+      }
     });
+
+    const pairs = Math.floor(eligibleQty / 2);
+    const singles = eligibleQty % 2;
+    const promoTotal = (pairs * 18000) + (singles * 9990);
+    const subtotal = promoTotal + otherTotal;
+    
     const delivery = parseInt(dom.manDelivery.value) || 0;
     const total = subtotal + delivery;
     dom.manTotalLabel.textContent = formatCurrency(total);
@@ -1334,7 +1350,10 @@
     }
 
     const items = [];
-    let subtotal = 0;
+    let eligibleQty = 0;
+    let otherTotal = 0;
+    let originalSubtotal = 0;
+
     Object.keys(state.manualCart).forEach(id => {
       const qty = state.manualCart[id];
       if (qty > 0) {
@@ -1345,7 +1364,14 @@
           quantity: qty,
           image: PRODUCTS[id].image
         });
-        subtotal += PRODUCTS[id].price * qty;
+        
+        originalSubtotal += PRODUCTS[id].price * qty;
+        
+        if (id === 'tropiconce' || id === 'pink-fantasy') {
+          eligibleQty += qty;
+        } else {
+          otherTotal += PRODUCTS[id].price * qty;
+        }
       }
     });
 
@@ -1354,6 +1380,11 @@
       return;
     }
 
+    const pairs = Math.floor(eligibleQty / 2);
+    const singles = eligibleQty % 2;
+    const promoTotal = (pairs * 18000) + (singles * 9990);
+    const subtotal = promoTotal + otherTotal;
+    const discount = originalSubtotal - subtotal;
     const deliveryFee = parseInt(dom.manDelivery.value) || 0;
     const total = subtotal + deliveryFee;
     const orderNumber = 'MAN-' + Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -1368,7 +1399,8 @@
         comments: dom.manComments.value.trim()
       },
       items,
-      subtotal,
+      subtotal: originalSubtotal,
+      discount,
       deliveryFee,
       total,
       payment: { method: dom.manPayment.value, status: 'confirmed' },
@@ -1799,20 +1831,21 @@
       const cost = state.productCosts[key] !== undefined ? state.productCosts[key] : Math.round(p.price * 0.5);
       const margin = p.price - cost;
       const marginPct = p.price > 0 ? (margin / p.price) * 100 : 0;
+      const isDisabled = p.active === false;
       
       html += `
-        <tr data-product-id="${key}">
+        <tr data-product-id="${key}" style="${isDisabled ? 'opacity: 0.45; background: rgba(0,0,0,0.015);' : ''}">
           <td>
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <img src="${p.image}" style="width:30px; height:30px; object-fit:contain; border-radius:4px;">
-              <span>${p.name}</span>
+              <span>${p.name} ${isDisabled ? '<strong style="color:var(--text-secondary); font-size:0.75rem; margin-left:0.5rem;">(DESACTIVADO)</strong>' : ''}</span>
             </div>
           </td>
           <td style="font-weight:600;">$${p.price.toLocaleString('es-CL')}</td>
           <td>
-            <input type="number" class="product-cost-input" data-product-id="${key}" value="${cost}" min="0">
+            <input type="number" class="product-cost-input" data-product-id="${key}" value="${cost}" min="0" ${isDisabled ? 'disabled' : ''}>
           </td>
-          <td class="product-margin-td" style="font-weight:600; color: ${marginPct >= 30 ? 'var(--success)' : 'var(--error)'};">
+          <td class="product-margin-td" style="font-weight:600; color: ${isDisabled ? 'var(--text-secondary)' : (marginPct >= 30 ? 'var(--success)' : 'var(--error)')};">
             $${margin.toLocaleString('es-CL')} (${marginPct.toFixed(0)}%)
           </td>
         </tr>
