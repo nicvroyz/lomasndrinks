@@ -1558,6 +1558,7 @@ code {
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid var(--border-subtle);
+  -webkit-overflow-scrolling: touch;
 }
 
 .finance-table {
@@ -1937,5 +1938,22 @@ code {
 .flatpickr-weekday {
   color: var(--text-secondary) !important;
   font-weight: 600 !important;
+}
+
+/* ============================================
+   HISTORY RESPONSIVE SCALING
+   ============================================ */
+.history-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .history-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
 }
 
