@@ -1236,10 +1236,24 @@
   // ==========================================
   // MANUAL ORDER LOGIC
   // ==========================================
+  const PREPARATIONS = {
+    'sin-energetica': 'Sin Energética',
+    'con-energetica': 'Con Energética'
+  };
+
   function openManualModal() {
     state.manualCart = {};
     Object.keys(PRODUCTS).forEach(id => {
-      state.manualCart[id] = 0;
+      const prod = PRODUCTS[id];
+      if (prod.active !== false) {
+        if (id === 'tropiconce' || id === 'pink-fantasy') {
+          Object.keys(PREPARATIONS).forEach(prepKey => {
+            state.manualCart[`${id}-${prepKey}`] = 0;
+          });
+        } else {
+          state.manualCart[id] = 0;
+        }
+      }
     });
     
     dom.manName.value = '';
@@ -1269,10 +1283,24 @@
 
   function renderManualProducts() {
     dom.manProductsList.innerHTML = '';
-    Object.keys(PRODUCTS).forEach(id => {
-      const prod = PRODUCTS[id];
-      if (prod.active === false) return; // skip inactive products
-      const qty = state.manualCart[id];
+    Object.keys(state.manualCart).forEach(itemId => {
+      const qty = state.manualCart[itemId];
+      
+      let baseId = itemId;
+      let optionText = '';
+      let optionKey = '';
+      
+      if (itemId.includes('-sin-energetica') || itemId.includes('-con-energetica')) {
+        const index = itemId.indexOf('-');
+        baseId = itemId.substring(0, index);
+        optionKey = itemId.substring(index + 1);
+        optionText = PREPARATIONS[optionKey];
+      }
+      
+      const prod = PRODUCTS[baseId];
+      if (!prod) return;
+      
+      const displayName = optionText ? `${prod.name} (${optionText})` : prod.name;
       
       const row = document.createElement('div');
       row.style.display = 'flex';
@@ -1285,27 +1313,27 @@
         <div style="display: flex; align-items: center; gap: 0.8rem;">
           <img src="${prod.image}" alt="${prod.name}" style="width: 40px; height: 40px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 6px;">
           <div>
-            <div style="font-weight: 600; font-size: 0.95rem;">${prod.name}</div>
+            <div style="font-weight: 600; font-size: 0.95rem;">${displayName}</div>
             <div style="font-size: 0.85rem; color: var(--gold);">${formatCurrency(prod.price)}</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-primary); padding: 0.2rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-          <button type="button" class="btn-qty minus" data-id="${id}" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">-</button>
+          <button type="button" class="btn-qty minus" data-id="${itemId}" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">-</button>
           <span style="min-width: 20px; text-align: center; font-weight: bold;">${qty}</span>
-          <button type="button" class="btn-qty plus" data-id="${id}" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">+</button>
+          <button type="button" class="btn-qty plus" data-id="${itemId}" style="width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">+</button>
         </div>
       `;
       
       row.querySelector('.minus').addEventListener('click', () => {
-        if (state.manualCart[id] > 0) {
-          state.manualCart[id]--;
+        if (state.manualCart[itemId] > 0) {
+          state.manualCart[itemId]--;
           renderManualProducts();
           updateManualTotal();
         }
       });
 
       row.querySelector('.plus').addEventListener('click', () => {
-        state.manualCart[id]++;
+        state.manualCart[itemId]++;
         renderManualProducts();
         updateManualTotal();
       });
@@ -1322,10 +1350,15 @@
       const qty = state.manualCart[id] || 0;
       if (qty <= 0) return;
       
-      if (id === 'tropiconce' || id === 'pink-fantasy') {
+      let baseId = id;
+      if (id.includes('-sin-energetica') || id.includes('-con-energetica')) {
+        baseId = id.split('-')[0];
+      }
+      
+      if (baseId === 'tropiconce' || baseId === 'pink-fantasy') {
         eligibleQty += qty;
       } else {
-        otherTotal += PRODUCTS[id].price * qty;
+        otherTotal += PRODUCTS[baseId].price * qty;
       }
     });
 
@@ -1357,20 +1390,32 @@
     Object.keys(state.manualCart).forEach(id => {
       const qty = state.manualCart[id];
       if (qty > 0) {
+        let baseId = id;
+        let optionText = '';
+        if (id.includes('-sin-energetica') || id.includes('-con-energetica')) {
+          const index = id.indexOf('-');
+          baseId = id.substring(0, index);
+          const optionKey = id.substring(index + 1);
+          optionText = PREPARATIONS[optionKey];
+        }
+
+        const prod = PRODUCTS[baseId];
+        const displayName = optionText ? `${prod.name} (${optionText})` : prod.name;
+
         items.push({
-          id: PRODUCTS[id].id,
-          name: PRODUCTS[id].name,
-          price: PRODUCTS[id].price,
+          id: id,
+          name: displayName,
+          price: prod.price,
           quantity: qty,
-          image: PRODUCTS[id].image
+          image: prod.image
         });
         
-        originalSubtotal += PRODUCTS[id].price * qty;
+        originalSubtotal += prod.price * qty;
         
-        if (id === 'tropiconce' || id === 'pink-fantasy') {
+        if (baseId === 'tropiconce' || baseId === 'pink-fantasy') {
           eligibleQty += qty;
         } else {
-          otherTotal += PRODUCTS[id].price * qty;
+          otherTotal += prod.price * qty;
         }
       }
     });
