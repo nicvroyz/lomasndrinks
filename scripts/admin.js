@@ -22,6 +22,7 @@
     inventory: [],
     currentReceiptFile: null,
     currentReceiptBase64: null,
+    historyPicker: null,
     initialInvestment: 65000,
     charts: {},
   };
@@ -101,10 +102,7 @@
     userMenu: $('#userMenu'),
     btnUserToggle: $('#btnUserToggle'),
     btnHistory: $('#btnHistory'),
-    historyModal: $('#historyModal'),
-    historyModalClose: $('#historyModalClose'),
-    historyStart: $('#historyStart'),
-    historyEnd: $('#historyEnd'),
+    historyRangePicker: $('#historyRangePicker'),
     btnSearchHistory: $('#btnSearchHistory'),
     historyResults: $('#historyResults'),
     historyTotalRevenue: $('#historyTotalRevenue'),
@@ -113,6 +111,7 @@
     ordersSection: $('#ordersSection'),
     accountingSection: $('#accountingSection'),
     inventorySection: $('#inventorySection'),
+    historySection: $('#historySection'),
     
     // Accounting KPIs
     finGrossRevenue: $('#finGrossRevenue'),
@@ -168,6 +167,7 @@
     invAdjustCost: $('#invAdjustCost'),
     newSupplyName: $('#newSupplyName'),
     newSupplyNameGroup: $('#newSupplyNameGroup'),
+    invCostGroup: $('#invCostGroup'),
     invAdjustComment: $('#invAdjustComment'),
     btnCancelInventory: $('#btnCancelInventory'),
     btnSaveInventoryAdjustment: $('#btnSaveInventoryAdjustment'),
@@ -237,7 +237,7 @@
       dom.btnHistory = $('#btnHistory');
       dom.btnLogout = $('#btnLogout');
       
-      if (dom.btnHistory) dom.btnHistory.addEventListener('click', openHistoryModal);
+      if (dom.btnHistory) dom.btnHistory.addEventListener('click', openHistoryTab);
       bindLogout();
     }
 
@@ -252,52 +252,7 @@
         dom.btnNewOrder = $('#btnNewOrder');
       }
 
-      if (!$('#historyModal')) {
-        document.body.insertAdjacentHTML('beforeend', `
-          <!-- HISTORY MODAL CACHE BUST INJECTION -->
-          <div class="modal-overlay" id="historyModal" style="display: none; z-index: 9000;">
-            <div class="modal-content" style="max-width: 800px; padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
-              <div class="modal-header" style="padding: 1.5rem; background: var(--bg-elevated); border-bottom: 1px solid var(--border-subtle);">
-                <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
-                  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  Historial de Ventas
-                </h2>
-                <button class="modal-close" id="historyModalClose">&times;</button>
-              </div>
-              <div class="modal-body" style="padding: 1.5rem; overflow-y: auto;">
-                <div style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem; background: var(--bg-primary); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                  <div style="flex: 1;">
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Desde</label>
-                    <input type="date" id="historyStart" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); outline: none;">
-                  </div>
-                  <div style="flex: 1;">
-                    <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.9rem;">Hasta</label>
-                    <input type="date" id="historyEnd" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); outline: none;">
-                  </div>
-                  <button id="btnSearchHistory" class="btn btn-action primary" style="background: var(--gold); color: var(--bg-primary); border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; cursor: pointer; height: 46px;">Buscar</button>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                  <h3 style="margin: 0;">Resultados</h3>
-                  <div style="font-size: 1.2rem; font-weight: bold; color: var(--gold);" id="historyTotalRevenue">$0</div>
-                </div>
-                <div id="historyResults" style="display: flex; flex-direction: column; gap: 1rem;">
-                  <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Selecciona un rango de fechas.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `);
-        dom.historyModal = $('#historyModal');
-        dom.historyModalClose = $('#historyModalClose');
-        dom.historyStart = $('#historyStart');
-        dom.historyEnd = $('#historyEnd');
-        dom.btnSearchHistory = $('#btnSearchHistory');
-        dom.historyResults = $('#historyResults');
-        dom.historyTotalRevenue = $('#historyTotalRevenue');
 
-        if (dom.btnSearchHistory) dom.btnSearchHistory.addEventListener('click', fetchHistory);
-        if (dom.historyModalClose) dom.historyModalClose.addEventListener('click', closeHistoryModal);
-      }
 
       if (!$('#manualModal')) {
         document.body.insertAdjacentHTML('beforeend', `
@@ -347,6 +302,30 @@
         dom.manDelivery.addEventListener('input', updateManualTotal);
         dom.manSubmit.addEventListener('click', submitManualOrder);
       }
+    }
+
+    if (dom.historyRangePicker && typeof flatpickr !== 'undefined') {
+      const today = new Date();
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(today.getDate() - 14);
+      
+      state.historyPicker = flatpickr(dom.historyRangePicker, {
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        defaultDate: [twoWeeksAgo, today],
+        locale: {
+          firstDayOfWeek: 1,
+          weekdays: {
+            shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+            longhand: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+          },
+          months: {
+            shorthand: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            longhand: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+          },
+          rangeSeparator: ' a '
+        }
+      });
     }
 
     bindEvents();
@@ -1087,9 +1066,10 @@
       dom.btnClearTestData.addEventListener('click', clearTestData);
     }
 
-    if (dom.btnHistory && dom.historyModalClose && dom.btnSearchHistory) {
-      dom.btnHistory.addEventListener('click', openHistoryModal);
-      dom.historyModalClose.addEventListener('click', closeHistoryModal);
+    if (dom.btnHistory) {
+      dom.btnHistory.addEventListener('click', openHistoryTab);
+    }
+    if (dom.btnSearchHistory) {
       dom.btnSearchHistory.addEventListener('click', fetchHistory);
     }
 
@@ -1466,8 +1446,8 @@
       total,
       payment: { method: dom.manPayment.value, status: 'confirmed' },
       status: 'new',
-      createdAt: { seconds: Math.floor(Date.now() / 1000) },
-      updatedAt: { seconds: Math.floor(Date.now() / 1000) },
+      createdAt: new Date(),
+      updatedAt: new Date(),
       source: 'manual'
     };
 
@@ -1590,41 +1570,11 @@
   // ============================================
   // HISTORY LOGIC
   // ============================================
-  function openHistoryModal() {
-    dom.historyModal.style.display = 'flex';
-    void dom.historyModal.offsetWidth;
-    dom.historyModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    
-    const today = new Date();
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(today.getDate() - 14);
-    
-    dom.historyStart.value = twoWeeksAgo.toISOString().split('T')[0];
-    dom.historyEnd.value = today.toISOString().split('T')[0];
-    dom.historyResults.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Selecciona un rango de fechas para buscar.</div>';
-    dom.historyTotalRevenue.innerText = '$0';
-  }
-
-  function closeHistoryModal() {
-    dom.historyModal.classList.remove('active');
-    setTimeout(() => {
-      dom.historyModal.style.display = 'none';
-      document.body.style.overflow = '';
-    }, 300);
-
-    let visibleSection = 'ordersSection';
-    if (dom.accountingSection && dom.accountingSection.style.display !== 'none') {
-      visibleSection = 'accountingSection';
-    } else if (dom.inventorySection && dom.inventorySection.style.display !== 'none') {
-      visibleSection = 'inventorySection';
-    }
-    
-    $$('.tab-nav-btn').forEach(btn => {
-      if (btn.dataset.section === visibleSection) {
-        btn.classList.add('active');
-      } else {
-        btn.classList.remove('active');
+  function openHistoryTab() {
+    const tabButtons = $$('.tab-nav-btn');
+    tabButtons.forEach(btn => {
+      if (btn.dataset.section === 'historySection') {
+        btn.click();
       }
     });
   }
@@ -1635,66 +1585,95 @@
       return;
     }
     
-    const startStr = dom.historyStart.value;
-    const endStr = dom.historyEnd.value;
-    if (!startStr || !endStr) return;
+    let startDate = null;
+    let endDate = null;
+    
+    if (state.historyPicker && state.historyPicker.selectedDates.length > 0) {
+      startDate = state.historyPicker.selectedDates[0];
+      endDate = state.historyPicker.selectedDates[1] || new Date(startDate);
+    } else {
+      dom.historyResults.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Por favor selecciona un rango de fechas.</div>';
+      return;
+    }
     
     dom.btnSearchHistory.innerText = "Buscando...";
     dom.btnSearchHistory.disabled = true;
     
     try {
-      // Import missing required functions specifically for this one-off fetch
-      const { getDocs, where } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-      const { collection, query, orderBy } = state.firestoreModule;
-
-      const startDate = new Date(startStr);
-      startDate.setHours(0,0,0,0);
+      const { collection, getDocs } = state.firestoreModule;
       
-      const endDate = new Date(endStr);
-      endDate.setHours(23,59,59,999);
+      const startLimit = new Date(startDate);
+      startLimit.setHours(0,0,0,0);
+      
+      const endLimit = new Date(endDate);
+      endLimit.setHours(23,59,59,999);
       
       const ordersRef = collection(db, 'orders');
-      const q = query(
-        ordersRef, 
-        where('createdAt', '>=', startDate), 
-        where('createdAt', '<=', endDate),
-        orderBy('createdAt', 'desc')
-      );
-      
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(ordersRef);
       
       let totalRev = 0;
+      let ordersList = [];
+      
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        let orderDate = null;
+        if (data.createdAt) {
+          if (data.createdAt.toDate) {
+            orderDate = data.createdAt.toDate();
+          } else if (data.createdAt.seconds) {
+            orderDate = new Date(data.createdAt.seconds * 1000);
+          } else {
+            orderDate = new Date(data.createdAt);
+          }
+        }
+        
+        if (orderDate && orderDate >= startLimit && orderDate <= endLimit) {
+          ordersList.push({
+            id: docSnap.id,
+            dateObj: orderDate,
+            ...data
+          });
+        }
+      });
+      
+      ordersList.sort((a, b) => b.dateObj - a.dateObj);
+      
       let html = '';
       
-      if (snapshot.empty) {
+      if (ordersList.length === 0) {
         html = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay ventas en estas fechas.</div>';
       } else {
-        snapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          if (data.status === 'entregado' || data.status === 'delivered') {
+        ordersList.forEach(data => {
+          const status = (data.status || '').toLowerCase().trim();
+          
+          if (status === 'entregado' || status === 'delivered') {
             totalRev += (data.total || data.totals?.finalTotal || 0);
           }
           
-          const dateStr = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString('es-CL') : 'Fecha desconocida';
+          const dateStr = data.dateObj.toLocaleString('es-CL');
           const productsStr = (data.cart || []).map(p => `${p.quantity}x ${p.name}`).join(', ');
           const cust = data.customer || {};
           
-          // Mapeo simple de colores para el badge
           const statusColors = {
             'pending': 'var(--warning)',
             'preparing': 'var(--accent)',
             'on_the_way': '#3b82f6',
             'delivered': 'var(--success)',
             'entregado': 'var(--success)',
-            'canceled': 'var(--error)'
+            'canceled': 'var(--error)',
+            'cancelado': 'var(--error)'
           };
-          const statusColor = statusColors[data.status] || 'var(--text-secondary)';
+          const statusColor = statusColors[status] || 'var(--text-secondary)';
+          
+          const friendlyStatus = status === 'delivered' || status === 'entregado' ? 'ENTREGADO' : 
+                                 status === 'canceled' || status === 'cancelado' ? 'CANCELADO' : 
+                                 status.toUpperCase();
 
           html += `
-          <div style="background: var(--bg-elevated); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 0.95rem;">
+          <div style="background: var(--bg-elevated); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-subtle); font-size: 0.95rem; margin-bottom: 0.8rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-              <strong>Pedido #${data.orderNumber}</strong>
-              <span style="color: ${statusColor}; font-weight: bold; text-transform: uppercase; font-size: 0.8rem;">${data.status}</span>
+              <strong>Pedido #${data.orderNumber || 'LD-Manual'}</strong>
+              <span style="color: ${statusColor}; font-weight: bold; text-transform: uppercase; font-size: 0.8rem;">${friendlyStatus}</span>
             </div>
             <div style="margin-bottom: 0.5rem; color: var(--text-secondary);">📅 ${dateStr}</div>
             <div style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${cust.name || 'Sin nombre'} | 📞 ${cust.phone || 'Sin tel'}</div>
@@ -1713,7 +1692,7 @@
       dom.historyResults.innerHTML = '<div style="color:red; text-align:center;">Error al buscar: ' + error.message + '</div>';
     }
     
-    dom.btnSearchHistory.innerText = "Buscar";
+    dom.btnSearchHistory.innerText = "Buscar Ventas";
     dom.btnSearchHistory.disabled = false;
   }
 
@@ -1764,10 +1743,7 @@
       btn.addEventListener('click', () => {
         const sectionId = btn.dataset.section;
         
-        if (sectionId === 'historySection') {
-          openHistoryModal();
-          return;
-        }
+
 
         // Toggle sections
         $$('.admin-section-container').forEach(sec => {
@@ -2849,14 +2825,15 @@
   function openInventoryModal() {
     if (!dom.inventoryModal) return;
     renderInventorySelectOptions();
-    dom.invAdjustSelect.value = '';
-    dom.invAdjustType.value = 'set';
-    dom.invAdjustQty.value = '';
-    dom.invAdjustCost.value = '';
-    dom.invAdjustComment.value = '';
-    dom.newSupplyNameGroup.style.display = 'none';
-    dom.newSupplyName.value = '';
-    dom.invCostGroup.style.display = 'block';
+    if (dom.invAdjustSelect) dom.invAdjustSelect.value = '';
+    if (dom.invAdjustType) dom.invAdjustType.value = 'set';
+    if (dom.invAdjustQty) dom.invAdjustQty.value = '';
+    if (dom.invAdjustCost) dom.invAdjustCost.value = '';
+    if (dom.invAdjustComment) dom.invAdjustComment.value = '';
+    if (dom.newSupplyNameGroup) dom.newSupplyNameGroup.style.display = 'none';
+    if (dom.newSupplyName) dom.newSupplyName.value = '';
+    if (dom.invCostGroup) dom.invCostGroup.style.display = 'block';
+    
     dom.inventoryModal.style.display = 'flex';
     void dom.inventoryModal.offsetWidth;
     dom.inventoryModal.classList.add('active');
