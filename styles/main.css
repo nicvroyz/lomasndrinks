@@ -3128,25 +3128,22 @@ body.late-night-mode .promo-banner {
 /* ============================================ */
 
 .status-banner {
-  background: linear-gradient(90deg, #0d0f14, #1a1510, #0d0f14);
+  background: linear-gradient(90deg, #e65100, #ff6d00, #e65100);
   color: #ffffff;
   text-align: center;
   padding: 12px var(--space-lg);
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   position: relative;
   z-index: calc(var(--z-sticky) + 1);
-  border-bottom: 1px solid rgba(220, 163, 17, 0.4);
-  animation: bannerShimmer 4s ease-in-out infinite;
-}
-
-@keyframes bannerShimmer {
-  0%, 100% { border-bottom-color: rgba(220, 163, 17, 0.3); }
-  50% { border-bottom-color: rgba(220, 163, 17, 0.7); }
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 15px rgba(230, 81, 0, 0.3);
 }
 
 .status-banner strong {
-  color: var(--gold);
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .status-banner-content {
