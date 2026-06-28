@@ -3124,15 +3124,25 @@ body.late-night-mode .promo-banner {
 /* ============================================ */
 
 .status-banner {
-  background: linear-gradient(90deg, #800a20, #b30000, #800a20);
-  color: var(--text-primary);
+  background: linear-gradient(90deg, #0d0f14, #1a1510, #0d0f14);
+  color: #ffffff;
   text-align: center;
-  padding: 10px var(--space-lg);
-  font-size: 0.85rem;
+  padding: 12px var(--space-lg);
+  font-size: 0.88rem;
   font-weight: 600;
   position: relative;
   z-index: calc(var(--z-sticky) + 1);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 1px solid rgba(220, 163, 17, 0.4);
+  animation: bannerShimmer 4s ease-in-out infinite;
+}
+
+@keyframes bannerShimmer {
+  0%, 100% { border-bottom-color: rgba(220, 163, 17, 0.3); }
+  50% { border-bottom-color: rgba(220, 163, 17, 0.7); }
+}
+
+.status-banner strong {
+  color: var(--gold);
 }
 
 .status-banner-content {
@@ -3145,7 +3155,7 @@ body.late-night-mode .promo-banner {
 .status-banner-close {
   background: none;
   border: none;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 1.2rem;
   padding: 0 var(--space-sm);
   cursor: pointer;
@@ -3155,12 +3165,14 @@ body.late-night-mode .promo-banner {
 
 .status-banner-close:hover {
   opacity: 1;
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
   .status-banner {
     font-size: 0.75rem;
-    padding: 8px var(--space-md);
+    padding: 10px var(--space-md);
+    line-height: 1.4;
   }
 }
 

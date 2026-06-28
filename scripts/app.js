@@ -194,7 +194,18 @@
     
     if (isStoreClosed) {
       if (promoBanner) promoBanner.style.display = 'none';
-      if (banner) banner.style.display = 'block';
+      if (banner) {
+        banner.style.display = 'block';
+        // Dynamic exciting message
+        const statusText = document.getElementById('storeStatusText');
+        if (statusText) {
+          const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          const nowCL = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' }));
+          const diaHoy = dias[nowCL.getDay()];
+          const diaN = nowCL.getDate();
+          statusText.innerHTML = `🔥 <strong>HOY ${diaHoy.toUpperCase()} ${diaN}</strong> — Abrimos a las 21:00 y atendemos hasta las 2:00 AM 🍸 ¡Programa tu pedido ahora!`;
+        }
+      }
       if (scheduledGroup) scheduledGroup.style.display = 'block';
       if (placeOrderBtn) placeOrderBtn.innerHTML = '📅 PROGRAMAR PEDIDO';
     } else {
