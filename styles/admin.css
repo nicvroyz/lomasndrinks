@@ -941,45 +941,106 @@ code {
 }
 
 @media (max-width: 768px) {
+  /* ---- HEADER: logo centered, controls row below ---- */
   .admin-header {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.75rem;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.4rem;
   }
 
   .header-left {
+    width: 100%;
+    justify-content: center;
+    gap: 0.35rem;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .admin-logo {
+    max-height: 42px !important;
+  }
+
+  .header-badge {
+    font-size: 0.6rem !important;
+    padding: 2px 8px !important;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: center;
     gap: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .logo {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 
   .sound-label {
     display: none;
   }
 
+  .btn-sound {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .connection-status {
+    font-size: 0.7rem;
+  }
+
+  .status-text {
+    display: none;
+  }
+
+  /* Nuevo Pedido button smaller */
+  #btnNewOrder {
+    padding: 0.35rem 0.7rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
+  }
+
+  #btnNewOrder svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* User dropdown smaller */
+  .user-btn {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* ---- DASHBOARD STATS ---- */
   .dashboard-stats {
     grid-template-columns: 1fr 1fr;
-    padding: 1rem;
-    gap: 0.75rem;
+    padding: 0.75rem;
+    gap: 0.6rem;
   }
 
   .stat-card {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   .stat-value {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
   }
 
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  /* ---- MAIN CONTENT ---- */
   .admin-main {
-    padding: 0 1rem 2rem;
+    padding: 0 0.75rem 2rem;
   }
 
+  /* ---- FILTERS ---- */
   .filter-bar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
   }
 
   .filter-tabs {
@@ -989,18 +1050,22 @@ code {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* ---- ORDER CARDS ---- */
   .order-card {
     grid-template-columns: 1fr auto;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 0.6rem;
+    padding: 0.85rem;
+    font-size: 0.85rem;
   }
 
   .order-number {
     grid-column: 1;
+    font-size: 0.9rem;
   }
 
   .order-info {
     grid-column: 1 / -1;
+    font-size: 0.8rem;
   }
 
   .order-total {
@@ -1014,6 +1079,7 @@ code {
     text-align: right;
   }
 
+  /* ---- MODALS ---- */
   .modal-content {
     max-height: 95vh;
     border-radius: var(--radius-lg);
@@ -1024,15 +1090,19 @@ code {
   }
 
   .modal-header {
-    padding: 1.25rem 1.25rem 1rem;
+    padding: 1rem 1rem 0.75rem;
   }
 
   .modal-body {
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem;
   }
 
   .modal-actions {
-    padding: 1rem 1.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .modal-title {
+    font-size: 1.05rem;
   }
 
   .info-grid {
@@ -1042,6 +1112,58 @@ code {
   .modal-timestamps {
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  /* ---- ACCOUNTING CARDS ---- */
+  .accounting-card {
+    padding: 1rem;
+  }
+
+  .card-header-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .card-header-flex h3,
+  .card-header-flex h2 {
+    font-size: 1rem;
+  }
+
+  /* ---- HISTORY SECTION ---- */
+  #historySection .accounting-card:first-child > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #historyRangePicker {
+    width: 160px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* ---- AI ACCOUNTANT ---- */
+  .ai-accountant-body {
+    gap: 0.75rem;
+  }
+
+  .ai-chat-section {
+    padding: 0.75rem;
+  }
+
+  .chat-suggest-btn {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* ---- FINANCE TABLE ---- */
+  .finance-table th,
+  .finance-table td {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .finance-table th {
+    font-size: 0.65rem;
   }
 }
 
@@ -1059,8 +1181,30 @@ code {
     font-size: 0.72rem;
   }
 
-  .modal-title {
-    font-size: 1.15rem;
+  .admin-header {
+    padding: 0.5rem;
+  }
+
+  .admin-logo {
+    max-height: 36px !important;
+  }
+
+  .header-right {
+    gap: 0.35rem;
+  }
+
+  #btnNewOrder {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .user-btn {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  .order-card {
+    padding: 0.7rem;
   }
 }
 
@@ -1789,28 +1933,28 @@ code {
 @media (max-width: 768px) {
   .admin-tabs-nav-container {
     padding: 0 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
   }
   
   .admin-tabs-nav {
-    gap: 0.5rem;
+    gap: 0.25rem;
     justify-content: space-around;
     overflow-x: auto;
-    scrollbar-width: none; /* Hide standard Firefox scrollbar */
+    scrollbar-width: none;
   }
   
   .admin-tabs-nav::-webkit-scrollbar {
-    display: none; /* Hide Chrome Webkit scrollbar */
+    display: none;
   }
 
   .tab-nav-btn {
-    padding: 1rem 0.35rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 0.35rem;
+    font-size: 0.8rem;
     flex-shrink: 0;
   }
 
   .tab-nav-label {
-    display: none; /* Hide text label on small mobile to fit strictly icons */
+    display: none;
   }
 
   .tab-nav-btn.active::after {
@@ -1818,49 +1962,50 @@ code {
   }
   
   .tab-nav-btn span {
-    font-size: 1.15rem; /* Larger icon on mobile tab */
+    font-size: 1.05rem;
   }
 
   /* Expose label if enough space is available on landscape/medium phones */
   @media (min-width: 480px) {
     .tab-nav-label {
       display: inline;
+      font-size: 0.8rem;
     }
     .tab-nav-btn span {
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
   }
 
   .finance-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    padding: 0 0.25rem;
+    gap: 0.6rem;
+    padding: 0;
   }
 
   .kpi-card-finance {
-    padding: 0.8rem;
-    gap: 0.6rem;
+    padding: 0.65rem;
+    gap: 0.5rem;
     border-radius: 8px;
   }
 
   .kpi-icon-finance {
-    width: 36px;
-    height: 36px;
-    font-size: 1.3rem;
+    width: 32px;
+    height: 32px;
+    font-size: 1.15rem;
     border-radius: 6px;
   }
 
   .kpi-value-finance {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .kpi-title-finance {
-    font-size: 0.72rem;
+    font-size: 0.65rem;
   }
 
   .kpi-input-wrapper-finance input {
-    width: 65px;
-    font-size: 0.85rem;
+    width: 55px;
+    font-size: 0.8rem;
   }
 }
 
