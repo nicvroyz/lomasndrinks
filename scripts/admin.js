@@ -110,6 +110,7 @@
     // Section Views
     ordersSection: $('#ordersSection'),
     accountingSection: $('#accountingSection'),
+    inventorySection: $('#inventorySection'),
     
     // Accounting KPIs
     finGrossRevenue: $('#finGrossRevenue'),
@@ -1588,7 +1589,13 @@
 
   function closeHistoryModal() {
     dom.historyModal.style.display = 'none';
-    const visibleSection = (dom.ordersSection && dom.ordersSection.style.display !== 'none') ? 'ordersSection' : 'accountingSection';
+    let visibleSection = 'ordersSection';
+    if (dom.accountingSection && dom.accountingSection.style.display !== 'none') {
+      visibleSection = 'accountingSection';
+    } else if (dom.inventorySection && dom.inventorySection.style.display !== 'none') {
+      visibleSection = 'inventorySection';
+    }
+    
     $$('.tab-nav-btn').forEach(btn => {
       if (btn.dataset.section === visibleSection) {
         btn.classList.add('active');
@@ -2121,7 +2128,7 @@
     }
 
     // Refresh charts if they are visible
-    if ($('#accountingSection').style.display !== 'none') {
+    if (dom.accountingSection && dom.accountingSection.style.display !== 'none') {
       renderCharts();
     }
   }

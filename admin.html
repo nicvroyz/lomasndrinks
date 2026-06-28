@@ -200,11 +200,15 @@
       </button>
       <button class="tab-nav-btn" data-section="accountingSection">
         <span class="tab-nav-icon">📊</span>
-        <span class="tab-nav-label">Contabilidad Avanzada</span>
+        <span class="tab-nav-label">Contabilidad</span>
+      </button>
+      <button class="tab-nav-btn" data-section="inventorySection">
+        <span class="tab-nav-icon">📦</span>
+        <span class="tab-nav-label">Inventario</span>
       </button>
       <button class="tab-nav-btn" data-section="historySection">
         <span class="tab-nav-icon">📅</span>
-        <span class="tab-nav-label">Historial de Ventas</span>
+        <span class="tab-nav-label">Historial</span>
       </button>
     </nav>
   </div>
@@ -401,34 +405,40 @@
       </div>
     </div>
 
-    <!-- 4. Product Costs Editor & OpEx Expenses Wrapper -->
+    <!-- 4. Product Costs Editor -->
+    <div class="accounting-card" style="margin-bottom: 2rem;">
+      <div class="card-header-flex">
+        <h3>Costos de Adquisición de Productos</h3>
+        <button id="btnSaveProductCosts" class="btn btn-action primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          Guardar Cambios
+        </button>
+      </div>
+      <div class="table-responsive-wrapper">
+        <table class="finance-table">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio Venta</th>
+              <th>Costo Unitario ($)</th>
+              <th>Margen Estimado</th>
+            </tr>
+          </thead>
+          <tbody id="productCostsTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================ -->
+  <!-- INVENTORY SECTION (OCR RECEIPTS & SUPPLIES) -->
+  <!-- ============================================ -->
+  <div id="inventorySection" class="admin-section-container" style="display: none;">
+    
     <div class="accounting-two-column-grid">
       
-      <!-- Product Costs Editor -->
-      <div class="accounting-card">
-        <div class="card-header-flex">
-          <h3>Costos de Adquisición de Productos</h3>
-          <button id="btnSaveProductCosts" class="btn btn-action primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-            Guardar Cambios
-          </button>
-        </div>
-        <div class="table-responsive-wrapper">
-          <table class="finance-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Precio Venta</th>
-                <th>Costo Unitario ($)</th>
-                <th>Margen Estimado</th>
-              </tr>
-            </thead>
-            <tbody id="productCostsTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       <!-- Expense Receipts Upload & List -->
       <div class="accounting-card">
         <h3>Registro de Egresos & Boletas</h3>
@@ -542,13 +552,10 @@
             </tbody>
           </table>
         </div>
-
       </div>
 
-    </div>
-
       <!-- Supplies Inventory Card -->
-      <div class="accounting-card" style="margin-top: 2rem;">
+      <div class="accounting-card">
         <div class="card-header-flex">
           <div>
             <h3>Inventario de Insumos e Ingredientes</h3>
@@ -583,6 +590,8 @@
         </div>
       </div>
 
+    </div>
+    
   </div>
 
   <!-- ============================================ -->
