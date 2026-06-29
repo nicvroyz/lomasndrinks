@@ -1284,6 +1284,9 @@
           dom.aiChatInput.value = query;
           handleAiChatSubmit();
         }
+      });
+    });
+
     // Recipes Tab listeners
     if (dom.recipeModalClose) {
       dom.recipeModalClose.addEventListener('click', closeRecipeModal);
