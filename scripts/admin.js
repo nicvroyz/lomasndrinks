@@ -3370,8 +3370,8 @@
 
     // --- 1. Find item zone (between header row and totals) ---
     const headerRe = /descripci[oó]n|detalle|precio\s*unit|cantidad|cant\b|product/i;
-    const endRe = /^(afecto|neto|iva|i\.?v\.?a|total|subtotal|exento)\b/i;
-    const skipRe = /total|subtotal|neto|iva|i\.?v\.?a|exento|rut|r\.?u\.?t|giro|efectivo|tarjeta|d[eé]bito|cr[eé]dito|visa|redcompra|mastercard|vuelto|cambio|fecha|nro|n[°º]|boleta|factura|descuento|dcto|pago|saldo|cajero|vendedor|hora\b|afecto|timbre|emisi[oó]n|forma\s*de\s*pago|por\s*lo\s*siguiente|casa\s*matriz|sucursal|fono|pagina|www\.|compra|venta/i;
+    const endRe = /afecto|net[oa]\b|iva\b|i\.?v\.?a|total\b|subtotal|exento/i;
+    const skipRe = /total|subtotal|net[oa]\b|iva\b|i\.?v\.?a|exento|rut|r\.?u\.?t|giro|efectivo|tarjeta|d[eé]bito|cr[eé]dito|visa|redcompra|mastercard|vuelto|cambio|vendedor|hora\s+\d|afecto|timbre|emisi[oó]n|forma\s*de\s*pago|por\s*lo\s*siguiente/i;
 
     let zoneStart = 0;
     let zoneEnd = lines.length;
@@ -3383,131 +3383,162 @@
     }
     console.log('[OCR Items] Zone:', zoneStart, '->', zoneEnd);
 
-    // --- 2. Helpers ---
-    // A "name line" has at least one word of 3+ letters
-    function isNameLine(line) {
-      return /[A-Za-záéíóúñÁÉÍÓÚÑ]{3,}/.test(line);
-    }
-    // A "price line" is mostly digits/dots/commas/spaces/$
-    function isPriceLine(line) {
-      const stripped = line.replace(/[\d.,\s$%]+/g, '').trim();
-      return stripped.length <= 2 && /\d{2,}/.test(line.replace(/[.,\s]/g, ''));
-    }
-    // Extract all numbers from a line (handling Chilean 4.590 format)
+    // --- 2. Helpers (noise-tolerant) ---
+    // Extract all numbers from a line (handles Chilean 4.590 / 13.770 format)
     function extractNums(line) {
       const matches = line.match(/\d[\d.,]*\d|\d+/g) || [];
       return matches.map(m => parseInt(m.replace(/[.,]/g, '')) || 0).filter(n => n > 0);
     }
 
-    // --- 3. Multi-line parsing ---
-    // Chilean boletas use TWO lines per item:
-    //   Format A: "[qty] [product name]" then "[unit price] [total]"
-    //   Format B: "[product name]"       then "[unit price] [qty] [total]"
+    // Does the line contain at least one number >= 100? (price signal)
+    // This is tolerant of OCR noise – even "Ll e 4.590 13770" passes
+    function hasPriceNumbers(line) {
+      return extractNums(line).some(n => n >= 100);
+    }
+
+    // Does the line contain at least one word of 4+ letters? (product name signal)
+    // Requires 4+ chars to filter out 1-2 letter OCR noise ("Ll", "e", "MN")
+    function hasProductWords(line) {
+      return /[A-Za-záéíóúñÁÉÍÓÚÑ]{4,}/.test(line);
+    }
+
+    // Clean a name line: remove symbols, keep product text
+    function cleanName(line) {
+      return line
+        .replace(/[<>—–=\[\]{}°€£¿?!|\\*#@^~`"]+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+
+    // --- 3. Noise-tolerant multi-line parsing ---
+    // Strategy: lines with product words (4+ letter words) = name lines
+    //           lines with big numbers (>= 100) = price lines
+    //           Pair each name line with the next price line
     let pending = null; // { name: string, qty: number }
 
     for (let i = zoneStart; i < zoneEnd; i++) {
       const line = lines[i];
       if (skipRe.test(line)) continue;
-      if (/^\d{2}[:.]\d{2}/.test(line)) continue; // skip time
       if (line.length < 2) continue;
 
-      const nameFlag = isNameLine(line);
-      const priceFlag = isPriceLine(line);
+      const hasWords = hasProductWords(line);
+      const hasPrices = hasPriceNumbers(line);
 
-      console.log('[OCR Items] L' + i + ': "' + line + '" name=' + nameFlag + ' price=' + priceFlag);
+      console.log('[OCR Items] L' + i + ': "' + line + '" words=' + hasWords + ' prices=' + hasPrices);
 
-      // -- Case 1: Name line (product description, possibly with leading qty) --
-      if (nameFlag && !priceFlag) {
-        // If we already had a pending item with no price line, try single-line extraction
-        if (pending) {
-          const tryNums = extractNums(pending.name);
-          const bigNums = tryNums.filter(n => n >= 100);
-          if (bigNums.length > 0) {
-            const cleanName = pending.name.replace(/\$?\s*\d[\d.,]*\d\s*$/g, '').trim();
-            if (cleanName.length > 2) {
-              items.push({ name: cleanName, qty: pending.qty, price: bigNums[bigNums.length - 1] });
+      // -- CASE A: Product name line (has words, no big prices) --
+      if (hasWords && !hasPrices) {
+        const cleaned = cleanName(line);
+        // Try to find leading quantity digit
+        const qtyMatch = cleaned.match(/^(\d{1,2})\s+([A-Za-záéíóúñÁÉÍÓÚÑ].*)/);
+        if (qtyMatch && qtyMatch[2].length > 2) {
+          pending = { name: qtyMatch[2].trim(), qty: parseInt(qtyMatch[1]) };
+        } else {
+          pending = { name: cleaned, qty: 1 };
+        }
+        console.log('[OCR Items]   -> Pending: "' + pending.name + '" qty=' + pending.qty);
+        continue;
+      }
+
+      // -- CASE B: Price line (has big numbers) + we have a pending product name --
+      if (hasPrices && pending) {
+        const nums = extractNums(line);
+        const bigNums = nums.filter(n => n >= 100);
+        let unitPrice = 0;
+        let qty = pending.qty;
+
+        if (bigNums.length >= 2) {
+          unitPrice = bigNums[0];
+          const total = bigNums[bigNums.length - 1];
+          // Infer quantity from total/unitPrice ratio
+          if (unitPrice > 0) {
+            const inferredQty = Math.round(total / unitPrice);
+            if (inferredQty >= 1 && inferredQty <= 999 &&
+                Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+              qty = inferredQty;
+            }
+          }
+        } else if (bigNums.length === 1) {
+          unitPrice = bigNums[0];
+        }
+
+        // Also check if there's an explicit small qty in the numbers
+        if (nums.length >= 3) {
+          const smallNums = nums.filter(n => n >= 1 && n < 100);
+          if (smallNums.length > 0 && bigNums.length >= 2) {
+            // Verify: does small * first big ≈ last big?
+            const sn = smallNums[0];
+            const total = bigNums[bigNums.length - 1];
+            if (Math.abs(total - bigNums[0] * sn) < bigNums[0] * 0.15) {
+              qty = sn;
             }
           }
         }
 
-        // Check for leading quantity: "3 Gin Boolton 1 L"
-        const qtyMatch = line.match(/^(\d{1,3})\s+([A-Za-záéíóúñÁÉÍÓÚÑ].*)/);
-        if (qtyMatch) {
-          pending = { name: qtyMatch[2].trim(), qty: parseInt(qtyMatch[1]) };
-        } else {
-          pending = { name: line, qty: 1 };
-        }
-        continue;
-      }
-
-      // -- Case 2: Price line (mostly numbers) following a name line --
-      if (priceFlag && pending) {
-        const nums = extractNums(line);
-        let unitPrice = 0;
-        let qty = pending.qty;
-
-        if (nums.length >= 3 && nums[1] < 1000) {
-          // Format B: [unitPrice] [qty] [total]
-          unitPrice = nums[0];
-          qty = nums[1];
-        } else if (nums.length >= 2) {
-          // Format A: [unitPrice] [total]
-          unitPrice = nums[0];
-        } else if (nums.length === 1) {
-          unitPrice = nums[0];
-        }
-
         if (unitPrice > 0 && pending.name.length > 1) {
           items.push({ name: pending.name, qty: qty, price: unitPrice });
-          console.log('[OCR Items] MATCH: "' + pending.name + '" x' + qty + ' @ $' + unitPrice);
+          console.log('[OCR Items]   -> MATCH: "' + pending.name + '" x' + qty + ' @ $' + unitPrice);
         }
         pending = null;
         continue;
       }
 
-      // -- Case 3: Price line but no pending name (orphan) --
-      if (priceFlag && !pending) {
-        continue; // skip orphan price lines
-      }
-
-      // -- Case 4: Line has both text AND significant numbers (single-line item) --
-      if (nameFlag && priceFlag) {
-        // Try to split into name and price
-        const textPart = line.replace(/\$?\s*\d[\d.,]*\d\s*$/g, '').trim();
+      // -- CASE C: Has BOTH words and prices on same line --
+      if (hasWords && hasPrices) {
+        const cleaned = cleanName(line);
         const nums = extractNums(line);
         const bigNums = nums.filter(n => n >= 100);
+        // Separate text from numbers
+        const namePart = cleaned.replace(/\d[\d.,]*\d|\d+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
-        if (textPart.length > 2 && bigNums.length > 0) {
-          items.push({ name: textPart, qty: 1, price: bigNums[bigNums.length - 1] });
+        if (namePart.length > 2 && bigNums.length > 0) {
+          let unitPrice = bigNums[0];
+          let qty = 1;
+          if (bigNums.length >= 2) {
+            const total = bigNums[bigNums.length - 1];
+            const inferredQty = Math.round(total / unitPrice);
+            if (inferredQty >= 1 && inferredQty <= 999 &&
+                Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+              qty = inferredQty;
+            }
+          }
+          items.push({ name: namePart, qty: qty, price: unitPrice });
           pending = null;
+        } else if (pending) {
+          // This might be a price line with some noise words
+          const bNums = bigNums;
+          if (bNums.length >= 1) {
+            let unitPrice = bNums[0];
+            let qty = pending.qty;
+            if (bNums.length >= 2) {
+              const total = bNums[bNums.length - 1];
+              const inferredQty = Math.round(total / unitPrice);
+              if (inferredQty >= 1 && inferredQty <= 999 &&
+                  Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+                qty = inferredQty;
+              }
+            }
+            items.push({ name: pending.name, qty: qty, price: unitPrice });
+            pending = null;
+          }
         } else {
-          // Treat as name line
-          pending = { name: line, qty: 1 };
+          pending = { name: cleaned, qty: 1 };
         }
         continue;
       }
+
+      // -- CASE D: Price line but no pending name (orphan) -> skip --
+      if (hasPrices && !pending) continue;
+
+      // -- All other lines: noise, skip --
     }
 
-    // Handle last pending item if it has embedded prices
-    if (pending) {
-      const tryNums = extractNums(pending.name);
-      const bigNums = tryNums.filter(n => n >= 100);
-      if (bigNums.length > 0) {
-        const cleanName = pending.name.replace(/\$?\s*\d[\d.,]*\d\s*$/g, '').trim();
-        if (cleanName.length > 2) {
-          items.push({ name: cleanName, qty: pending.qty, price: bigNums[bigNums.length - 1] });
-        }
-      }
-    }
-
-    // --- 4. Fallback: if no items found via multi-line, try single-line patterns ---
+    // --- 4. Fallback: single-line patterns if nothing found ---
     if (items.length === 0) {
       console.log('[OCR Items] No multi-line items found, trying single-line fallback...');
       for (const line of lines) {
         if (skipRe.test(line)) continue;
-        if (/\d{2}[:.]\d{2}/.test(line)) continue;
 
-        // [Qty] x [Name] [Price]
         const mX = line.match(/^(\d+)\s*[xX*]\s*(.+?)\s+\$?\s*([\d][\d.,]*)\s*$/);
         if (mX) {
           const qty = parseInt(mX[1]);
@@ -3519,25 +3550,12 @@
           }
         }
 
-        // [Name] $[Price]
         const mD = line.match(/^(.+?)\s+\$\s*([\d][\d.,]*)\s*$/);
         if (mD) {
           const name = mD[1].trim();
           const price = parseInt(mD[2].replace(/[.,]/g, '')) || 0;
           if (name.length > 2 && price > 50) {
             items.push({ name, qty: 1, price });
-            continue;
-          }
-        }
-
-        // [Qty] [Name] [Price] (all on one line)
-        const mS = line.match(/^(\d{1,3})\s+([A-Za-záéíóúñÁÉÍÓÚÑ].+?)\s+([\d][\d.,]*)\s*$/);
-        if (mS) {
-          const qty = parseInt(mS[1]);
-          const name = mS[2].trim();
-          const price = parseInt(mS[3].replace(/[.,]/g, '')) || 0;
-          if (qty > 0 && name.length > 2 && price > 0) {
-            items.push({ name, qty, price });
             continue;
           }
         }
