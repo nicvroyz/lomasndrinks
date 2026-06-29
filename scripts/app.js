@@ -72,6 +72,19 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  // ─── GA4 TRACKING HELPER ───
+  function trackEcommerceEvent(eventName, eventParams) {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', eventName, eventParams);
+    }
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null }); // Clear previous
+    window.dataLayer.push({
+      event: eventName,
+      ecommerce: eventParams
+    });
+  }
+
   // ─── CACHED DOM ELEMENTS ───
   let cartOverlay, cartSidebar, cartItems, cartFooter, cartBadge;
   let cartSubtotal, cartTotal, checkoutOverlay, checkoutSummary;
@@ -858,16 +871,14 @@
       }
     }
 
-    if (typeof gtag === 'function') {
-      gtag('event', 'add_to_cart', {
-        currency: 'CLP',
-        value: productPrice,
-        items: [{ item_id: productId, item_name: productName, price: productPrice, quantity: 1 }]
-      });
-    }
-
     const qtyInput = card ? card.querySelector('.qty-value') : document.getElementById(`qty-${productId}`);
     const quantity = qtyInput ? parseInt(qtyInput.value) : 1;
+
+    trackEcommerceEvent('add_to_cart', {
+      currency: 'CLP',
+      value: productPrice * quantity,
+      items: [{ item_id: productId, item_name: productName, price: productPrice, quantity: quantity }]
+    });
 
     addToCart({
       id: productId,
@@ -1127,6 +1138,17 @@
     cartOverlay.classList.add('open');
     cartSidebar.classList.add('open');
     document.body.style.overflow = 'hidden';
+
+    trackEcommerceEvent('view_cart', {
+      currency: 'CLP',
+      value: getCartTotal(),
+      items: cart.map(item => ({
+        item_id: item.id,
+        item_name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }))
+    });
   }
 
   function closeCart() {
@@ -1145,20 +1167,15 @@
     checkoutOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
     
-    // GTM tracking
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: 'begin_checkout',
-      ecommerce: {
-        value: getCartTotal(),
-        currency: 'CLP',
-        items: cart.map(item => ({
-          item_id: item.id,
-          item_name: item.name,
-          price: item.price,
-          quantity: item.quantity
-        }))
-      }
+    trackEcommerceEvent('begin_checkout', {
+      value: getCartTotal(),
+      currency: 'CLP',
+      items: cart.map(item => ({
+        item_id: item.id,
+        item_name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }))
     });
 
     if (isStoreClosed) {
@@ -1397,14 +1414,12 @@
   }
 
   function showOrderConfirmation(order, method) {
-    if (typeof gtag === 'function') {
-      gtag('event', 'purchase', {
-        transaction_id: order.orderNumber,
-        value: order.total,
-        currency: 'CLP',
-        items: order.items.map(i => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.quantity }))
-      });
-    }
+    trackEcommerceEvent('purchase', {
+      transaction_id: order.orderNumber,
+      value: order.total,
+      currency: 'CLP',
+      items: order.items.map(i => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.quantity }))
+    });
 
     checkoutForm.style.display = 'none';
     orderConfirmation.style.display = 'block';
@@ -1608,11 +1623,38 @@
   }
 
   // ─── SCROLL ANIMATIONS ───
+  const trackedViews = new Set();
+
   function initScrollAnimations() {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+
+          // Track view_item for product cards
+          if (entry.target.classList.contains('product-card')) {
+            const productId = entry.target.getAttribute('data-product-id');
+            if (productId && !trackedViews.has(productId)) {
+              trackedViews.add(productId);
+              const btn = entry.target.querySelector('.btn-add-cart');
+              if (btn) {
+                const productName = btn.getAttribute('data-name') || productId;
+                const productPrice = parseFloat(btn.getAttribute('data-price')) || 0;
+
+                trackEcommerceEvent('view_item', {
+                  currency: 'CLP',
+                  value: productPrice,
+                  items: [{
+                    item_id: productId,
+                    item_name: productName,
+                    price: productPrice,
+                    quantity: 1
+                  }]
+                });
+              }
+            }
+          }
+
           observer.unobserve(entry.target);
         }
       });
