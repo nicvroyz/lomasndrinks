@@ -20,6 +20,8 @@
     productCosts: {},
     expenses: [],
     inventory: [],
+    recipes: [],
+    selectedRecipeProductId: null,
     currentReceiptFile: null,
     currentReceiptBase64: null,
     historyPicker: null,
@@ -112,6 +114,7 @@
     ordersSection: $('#ordersSection'),
     accountingSection: $('#accountingSection'),
     inventorySection: $('#inventorySection'),
+    recipesSection: $('#recipesSection'),
     historySection: $('#historySection'),
     
     // Accounting KPIs
@@ -167,6 +170,9 @@
     invAdjustType: $('#invAdjustType'),
     invAdjustQty: $('#invAdjustQty'),
     invAdjustCost: $('#invAdjustCost'),
+    invAdjustUnit: $('#invAdjustUnit'),
+    invAdjustCapacity: $('#invAdjustCapacity'),
+    invAdjustCapacityGroup: $('#invAdjustCapacityGroup'),
     newSupplyName: $('#newSupplyName'),
     newSupplyNameGroup: $('#newSupplyNameGroup'),
     invCostGroup: $('#invCostGroup'),
@@ -175,7 +181,17 @@
     btnSaveInventoryAdjustment: $('#btnSaveInventoryAdjustment'),
     receiptPhotoModal: $('#receiptPhotoModal'),
     receiptPhotoModalClose: $('#receiptPhotoModalClose'),
-    receiptPhotoImg: $('#receiptPhotoImg')
+    receiptPhotoImg: $('#receiptPhotoImg'),
+    
+    // Recipes Tab & Modal
+    recipesGridList: $('#recipesGridList'),
+    recipeModal: $('#recipeModal'),
+    recipeModalClose: $('#recipeModalClose'),
+    recipeModalTitle: $('#recipeModalTitle'),
+    recipeIngredientsTableBody: $('#recipeIngredientsTableBody'),
+    btnRecipeAddIngredient: $('#btnRecipeAddIngredient'),
+    btnRecipeCancel: $('#btnRecipeCancel'),
+    btnRecipeSave: $('#btnRecipeSave')
   };
 
   // ---- Status Labels ----
@@ -847,10 +863,22 @@
       try {
         const { doc, updateDoc, Timestamp } = state.firestoreModule;
         const orderRef = doc(db, 'orders', orderId);
-        await updateDoc(orderRef, {
+        
+        const existingOrder = state.orders.find(o => o.id === orderId);
+        const shouldDeduct = (newStatus === 'confirmed' || newStatus === 'delivered') && existingOrder && !existingOrder.ingredientsDeducted;
+        
+        const updatePayload = {
           status: newStatus,
-          updatedAt: Timestamp.now(),
-        });
+          updatedAt: Timestamp.now()
+        };
+        
+        if (shouldDeduct) {
+          updatePayload.ingredientsDeducted = true;
+          existingOrder.ingredientsDeducted = true;
+          await deductIngredientsForOrder(existingOrder);
+        }
+        
+        await updateDoc(orderRef, updatePayload);
         openWhatsAppNotification(orderId, newStatus);
       } catch (err) {
         console.error('Error updating order:', err);
@@ -860,8 +888,13 @@
       // Demo mode: update locally
       const order = state.orders.find((o) => o.id === orderId);
       if (order) {
+        const shouldDeduct = (newStatus === 'confirmed' || newStatus === 'delivered') && !order.ingredientsDeducted;
         order.status = newStatus;
         order.updatedAt = { seconds: Math.floor(Date.now() / 1000) };
+        if (shouldDeduct) {
+          order.ingredientsDeducted = true;
+          deductDemoIngredientsForOrder(order);
+        }
         renderOrders([]);
         updateStats();
         openWhatsAppNotification(orderId, newStatus);
@@ -1158,11 +1191,34 @@
 
     if (dom.invAdjustSelect) {
       dom.invAdjustSelect.addEventListener('change', (e) => {
-        if (e.target.value === '__new__') {
+        const val = e.target.value;
+        if (val === '__new__') {
           if (dom.newSupplyNameGroup) dom.newSupplyNameGroup.style.display = 'block';
           if (dom.invCostGroup) dom.invCostGroup.style.display = 'block';
+          if (dom.invAdjustUnit) dom.invAdjustUnit.value = 'unidades';
+          if (dom.invAdjustCapacity) dom.invAdjustCapacity.value = '1';
+          if (dom.invAdjustCapacityGroup) dom.invAdjustCapacityGroup.style.display = 'none';
         } else {
           if (dom.newSupplyNameGroup) dom.newSupplyNameGroup.style.display = 'none';
+          const existing = state.inventory.find(i => i.id === val);
+          if (existing) {
+            if (dom.invAdjustUnit) dom.invAdjustUnit.value = existing.unit || 'unidades';
+            if (dom.invAdjustCapacity) dom.invAdjustCapacity.value = existing.capacity || '1';
+            if (dom.invAdjustCapacityGroup) {
+              dom.invAdjustCapacityGroup.style.display = (existing.unit === 'unidades') ? 'none' : 'block';
+            }
+          }
+        }
+      });
+    }
+
+    if (dom.invAdjustUnit) {
+      dom.invAdjustUnit.addEventListener('change', (e) => {
+        if (e.target.value === 'unidades') {
+          if (dom.invAdjustCapacityGroup) dom.invAdjustCapacityGroup.style.display = 'none';
+          if (dom.invAdjustCapacity) dom.invAdjustCapacity.value = '1';
+        } else {
+          if (dom.invAdjustCapacityGroup) dom.invAdjustCapacityGroup.style.display = 'block';
         }
       });
     }
@@ -1228,8 +1284,24 @@
           dom.aiChatInput.value = query;
           handleAiChatSubmit();
         }
+    // Recipes Tab listeners
+    if (dom.recipeModalClose) {
+      dom.recipeModalClose.addEventListener('click', closeRecipeModal);
+    }
+    if (dom.btnRecipeCancel) {
+      dom.btnRecipeCancel.addEventListener('click', closeRecipeModal);
+    }
+    if (dom.btnRecipeSave) {
+      dom.btnRecipeSave.addEventListener('click', saveRecipe);
+    }
+    if (dom.btnRecipeAddIngredient) {
+      dom.btnRecipeAddIngredient.addEventListener('click', () => addRecipeIngredientRow());
+    }
+    if (dom.recipeModal) {
+      dom.recipeModal.addEventListener('click', (e) => {
+        if (e.target === dom.recipeModal) closeRecipeModal();
       });
-    });
+    }
   }
 
   // ==========================================
@@ -1750,7 +1822,6 @@
         const sectionId = btn.dataset.section;
         
 
-
         // Toggle sections
         $$('.admin-section-container').forEach(sec => {
           if (sec.id === sectionId) {
@@ -1772,6 +1843,11 @@
         // If switching to accounting, redraw charts
         if (sectionId === 'accountingSection') {
           renderCharts();
+        }
+        
+        // If switching to recipes, render the list
+        if (sectionId === 'recipesSection') {
+          renderRecipesList();
         }
       });
     });
@@ -1813,6 +1889,16 @@
         });
       });
       state.inventory.sort((a, b) => a.name.localeCompare(b.name));
+
+      // 3.5. Fetch Recipes
+      const recipesSnapshot = await getDocs(collection(db, 'recipes'));
+      state.recipes = [];
+      recipesSnapshot.forEach(doc => {
+        state.recipes.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
 
       // 4. Load initial investment from localStorage
       const savedInvestment = localStorage.getItem('lomas_initial_investment');
@@ -2425,6 +2511,28 @@
       });
     }
 
+    // 5. Low Stock / Critical Stock warnings
+    state.inventory.forEach(item => {
+      const stock = parseFloat(item.stock) || 0;
+      const capacity = parseFloat(item.capacity) || 1;
+      const unit = item.unit || 'unidades';
+      const unitsCount = stock / capacity;
+      
+      const purchaseLabel = unit === 'ml' ? 'botellas' : unit === 'gr' ? 'paquetes' : 'unidades';
+      
+      if (unitsCount <= 3) {
+        alerts.push({
+          type: 'danger',
+          text: `🚨 <strong>Stock Crítico de Insumo:</strong> Quedan solo <strong>${unitsCount.toFixed(1).replace(/\.0$/, '')} ${purchaseLabel}</strong> (${stock.toLocaleString('es-CL')} ${unit}) de '${item.name}'. ¡Es urgente abastecer este insumo!`
+        });
+      } else if (unitsCount <= 8) {
+        alerts.push({
+          type: 'warning',
+          text: `⚠️ <strong>Poco Stock de Insumo:</strong> Quedan <strong>${unitsCount.toFixed(1).replace(/\.0$/, '')} ${purchaseLabel}</strong> (${stock.toLocaleString('es-CL')} ${unit}) de '${item.name}'. Considera comprar más pronto.`
+        });
+      }
+    });
+
     if (alerts.length === 0) {
       dom.aiAlertsList.innerHTML = `
         <div class="ai-alert success">
@@ -2810,17 +2918,49 @@
     
     let html = '';
     state.inventory.forEach(item => {
-      const totalValue = item.stock * item.cost;
+      const stock = parseFloat(item.stock) || 0;
+      const capacity = parseFloat(item.capacity) || 1;
+      const unit = item.unit || 'unidades';
+      const cost = parseFloat(item.cost) || 0;
+      
+      const unitsCount = stock / capacity;
+      const totalValue = unitsCount * cost;
+      
+      // Determine low stock flags based on purchase units
+      let stockStyle = 'font-weight:700; color:var(--gold);';
+      let stockBadge = '';
+      
+      if (unitsCount <= 3) {
+        stockStyle = 'font-weight:700; color:var(--status-cancelled); background: var(--status-cancelled-bg); padding: 3px 8px; border-radius: 6px; display: inline-block;';
+        stockBadge = '<span style="font-size:0.7rem; color:var(--status-cancelled); font-weight:bold; display:block; margin-top:4px;">🚨 STOCK CRÍTICO</span>';
+      } else if (unitsCount <= 8) {
+        stockStyle = 'font-weight:700; color:var(--status-preparing); background: var(--status-preparing-bg); padding: 3px 8px; border-radius: 6px; display: inline-block;';
+        stockBadge = '<span style="font-size:0.7rem; color:var(--status-preparing); font-weight:bold; display:block; margin-top:4px;">⚠️ STOCK BAJO</span>';
+      }
+      
+      // Format Stock Display Text
+      let stockText = '';
+      if (unit === 'unidades') {
+        stockText = `${stock.toFixed(1).replace(/\.0$/, '')} unidades`;
+      } else {
+        const purchaseLabel = unit === 'ml' ? 'botella(s)' : 'bolsa(s)/paquete(s)';
+        stockText = `${unitsCount.toFixed(1).replace(/\.0$/, '')} ${purchaseLabel} (${stock.toLocaleString('es-CL')} ${unit})`;
+      }
+      
       html += `
         <tr>
           <td style="font-weight:600; color:var(--text-primary);">${item.name}</td>
-          <td style="font-weight:700; color:var(--gold);">${parseFloat(item.stock).toFixed(1).replace(/\.0$/, '')} unidades</td>
-          <td>$${Math.round(item.cost).toLocaleString('es-CL')}</td>
+          <td>
+            <span style="${stockStyle}">${stockText}</span>
+            ${stockBadge}
+          </td>
+          <td>$${Math.round(cost).toLocaleString('es-CL')} ${unit !== 'unidades' ? `por u.` : ''}</td>
           <td style="font-weight:600;">$${Math.round(totalValue).toLocaleString('es-CL')}</td>
           <td style="color:var(--text-secondary); font-size:0.8rem;">${item.updatedAt || 'Sin fecha'}</td>
         </tr>
       `;
     });
+    
     dom.inventoryTableBody.innerHTML = html;
   }
 
@@ -2831,7 +2971,18 @@
     html += '<option value="__new__">🆕 [Nuevo Insumo / Ingrediente]</option>';
     
     state.inventory.forEach(item => {
-      html += `<option value="${item.id}">${item.name} (Stock: ${parseFloat(item.stock).toFixed(1).replace(/\.0$/, '')})</option>`;
+      const stock = parseFloat(item.stock) || 0;
+      const capacity = parseFloat(item.capacity) || 1;
+      const unit = item.unit || 'unidades';
+      const unitsCount = stock / capacity;
+      
+      let displayStock = '';
+      if (unit === 'unidades') {
+        displayStock = `${stock.toFixed(1).replace(/\.0$/, '')} u.`;
+      } else {
+        displayStock = `${unitsCount.toFixed(1).replace(/\.0$/, '')} u. (${stock.toLocaleString('es-CL')} ${unit})`;
+      }
+      html += `<option value="${item.id}">${item.name} (Stock: ${displayStock})</option>`;
     });
     
     dom.invAdjustSelect.innerHTML = html;
@@ -2882,27 +3033,36 @@
       
       let currentStock = 0;
       let currentCost = 0;
+      let capacity = 1;
+      let unit = 'unidades';
       
       if (docSnap.exists()) {
         const data = docSnap.data();
         currentStock = parseFloat(data.stock || 0);
         currentCost = parseFloat(data.cost || 0);
+        capacity = parseFloat(data.capacity || 1) || 1;
+        unit = data.unit || 'unidades';
       }
       
-      const purchasedQty = parseFloat(item.qty) || 0;
+      const purchasedUnits = parseFloat(item.qty) || 0;
       const purchasedCost = parseFloat(item.price) || 0;
+      const addedStock = purchasedUnits * capacity;
+      const newStock = currentStock + addedStock;
       
-      const newStock = currentStock + purchasedQty;
+      const currentUnits = currentStock / capacity;
+      const newUnits = newStock / capacity;
       
       let newCost = purchasedCost;
-      if (currentStock > 0 && newStock > 0) {
-        newCost = (currentStock * currentCost + purchasedQty * purchasedCost) / newStock;
+      if (currentUnits > 0 && newUnits > 0) {
+        newCost = (currentUnits * currentCost + purchasedUnits * purchasedCost) / newUnits;
       }
       
       const supplyData = {
         name: docSnap.exists() ? docSnap.data().name : item.name,
         stock: newStock,
         cost: Math.round(newCost),
+        unit: unit,
+        capacity: capacity,
         updatedAt: date
       };
       
@@ -2933,28 +3093,38 @@
       const localItemIndex = state.inventory.findIndex(i => i.id === normalizedId);
       let currentStock = 0;
       let currentCost = 0;
+      let capacity = 1;
+      let unit = 'unidades';
       let name = item.name;
       
       if (localItemIndex > -1) {
         const existing = state.inventory[localItemIndex];
         currentStock = parseFloat(existing.stock || 0);
         currentCost = parseFloat(existing.cost || 0);
+        capacity = parseFloat(existing.capacity || 1) || 1;
+        unit = existing.unit || 'unidades';
         name = existing.name;
       }
       
-      const purchasedQty = parseFloat(item.qty) || 0;
+      const purchasedUnits = parseFloat(item.qty) || 0;
       const purchasedCost = parseFloat(item.price) || 0;
-      const newStock = currentStock + purchasedQty;
+      const addedStock = purchasedUnits * capacity;
+      const newStock = currentStock + addedStock;
+      
+      const currentUnits = currentStock / capacity;
+      const newUnits = newStock / capacity;
       
       let newCost = purchasedCost;
-      if (currentStock > 0 && newStock > 0) {
-        newCost = (currentStock * currentCost + purchasedQty * purchasedCost) / newStock;
+      if (currentUnits > 0 && newUnits > 0) {
+        newCost = (currentUnits * currentCost + purchasedUnits * purchasedCost) / newUnits;
       }
       
       const supplyData = {
         name,
         stock: newStock,
         cost: Math.round(newCost),
+        unit: unit,
+        capacity: capacity,
         updatedAt: date
       };
       
@@ -2976,6 +3146,8 @@
     const qty = parseFloat(dom.invAdjustQty.value) || 0;
     const cost = parseInt(dom.invAdjustCost.value) || 0;
     const comment = dom.invAdjustComment.value.trim();
+    const unit = dom.invAdjustUnit ? dom.invAdjustUnit.value : 'unidades';
+    const capacity = parseFloat(dom.invAdjustCapacity ? dom.invAdjustCapacity.value : 1) || 1;
     
     if (!supplyId || qty <= 0 || !comment) {
       alert('Por favor completa todos los campos del ajuste.');
@@ -3026,6 +3198,8 @@
       name: name,
       stock: newStock,
       cost: currentCost,
+      unit: unit,
+      capacity: capacity,
       updatedAt: todayStr
     };
 
@@ -3243,14 +3417,305 @@
   // ============================================
   // RECEIPT PHOTO MODAL CONTROLLER
   // ============================================
-  function openReceiptPhotoModal(imgUrl) {
-    if (!dom.receiptPhotoModal || !dom.receiptPhotoImg) return;
-    dom.receiptPhotoImg.src = imgUrl;
-    dom.receiptPhotoModal.style.display = 'flex';
-  }
-
   function closeReceiptPhotoModal() {
     if (dom.receiptPhotoModal) dom.receiptPhotoModal.style.display = 'none';
+  }
+
+  // ============================================
+  // RECIPES & INGREDIENT DEDUCTIONS CONTROLLERS
+  // ============================================
+  const RECIPE_TARGETS = [
+    { id: 'tropiconce-sin-energetica', name: 'Tropiconce (Sin Energética)', baseId: 'tropiconce', option: 'Sin Energética' },
+    { id: 'tropiconce-con-energetica', name: 'Tropiconce (Con Energética)', baseId: 'tropiconce', option: 'Con Energética' },
+    { id: 'pink-fantasy-sin-energetica', name: 'Pink Fantasy (Sin Energética)', baseId: 'pink-fantasy', option: 'Sin Energética' },
+    { id: 'pink-fantasy-con-energetica', name: 'Pink Fantasy (Con Energética)', baseId: 'pink-fantasy', option: 'Con Energética' },
+    { id: 'promo-piscola', name: 'Promo Piscola Normal', baseId: 'promo-piscola', option: null },
+    { id: 'promo-piscola-3l', name: 'Promo Piscola Agrandada (3L)', baseId: 'promo-piscola-3l', option: null },
+    { id: 'promo-manzana', name: 'Promo Pisco Manzana', baseId: 'promo-manzana', option: null },
+    { id: 'promo-manzana-3l', name: 'Promo Manzana Agrandada (3L)', baseId: 'promo-manzana-3l', option: null },
+    { id: 'pack-escudo-silver', name: 'Six Pack Escudo Silver', baseId: 'pack-escudo-silver', option: null },
+    { id: 'pack-escudo', name: 'Six Pack Escudo', baseId: 'pack-escudo', option: null },
+    { id: 'pack-cristal', name: 'Six Pack Cristal', baseId: 'pack-cristal', option: null },
+    { id: 'pack-royal', name: 'Six Pack Royal Guard', baseId: 'pack-royal', option: null },
+    { id: 'pack-heineken', name: 'Six Pack Heineken', baseId: 'pack-heineken', option: null }
+  ];
+
+  function renderRecipesList() {
+    if (!dom.recipesGridList) return;
+    
+    dom.recipesGridList.innerHTML = '';
+    
+    RECIPE_TARGETS.forEach(target => {
+      const prod = PRODUCTS[target.baseId];
+      if (!prod) return;
+      
+      const recipe = state.recipes.find(r => r.id === target.id);
+      let ingredientsHtml = '<p style="color:var(--text-muted); font-size:0.8rem; margin:0.25rem 0;">Sin ingredientes configurados.</p>';
+      
+      if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
+        ingredientsHtml = '<ul style="margin: 0.5rem 0; padding-left: 1.2rem; font-size: 0.8rem; line-height:1.5;">';
+        recipe.ingredients.forEach(ing => {
+          const supply = state.inventory.find(i => i.id === ing.supplyId);
+          const supplyName = supply ? supply.name : ing.supplyId;
+          const supplyUnit = supply ? (supply.unit || 'unidades') : 'u';
+          ingredientsHtml += `<li><strong>${ing.qty} ${supplyUnit}</strong> de ${supplyName}</li>`;
+        });
+        ingredientsHtml += '</ul>';
+      }
+      
+      const card = document.createElement('div');
+      card.className = 'accounting-card';
+      card.style.margin = '0';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.justifyContent = 'space-between';
+      card.style.gap = '1rem';
+      
+      card.innerHTML = `
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.8rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.8rem;">
+            <img src="${prod.image}" alt="${prod.name}" style="width: 45px; height: 45px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 6px;">
+            <div>
+              <h4 style="margin: 0; font-size: 0.95rem; color: var(--gold);">${target.name}</h4>
+              <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary);">${prod.description || ''}</p>
+            </div>
+          </div>
+          <div style="margin-top: 0.8rem;">
+            <h5 style="margin: 0; font-size: 0.8rem; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Receta / Ingredientes:</h5>
+            ${ingredientsHtml}
+          </div>
+        </div>
+        <button class="btn btn-action primary btn-edit-recipe" data-id="${target.id}" style="font-size: 0.8rem; padding: 0.5rem; width: 100%;">
+          📝 Configurar Receta
+        </button>
+      `;
+      
+      card.querySelector('.btn-edit-recipe').addEventListener('click', () => {
+        openRecipeModal(target.id);
+      });
+      
+      dom.recipesGridList.appendChild(card);
+    });
+  }
+
+  function openRecipeModal(productId) {
+    if (!dom.recipeModal) return;
+    
+    state.selectedRecipeProductId = productId;
+    const target = RECIPE_TARGETS.find(t => t.id === productId);
+    if (dom.recipeModalTitle) {
+      dom.recipeModalTitle.textContent = `Configurar Receta: ${target ? target.name : productId}`;
+    }
+    
+    if (dom.recipeIngredientsTableBody) {
+      dom.recipeIngredientsTableBody.innerHTML = '';
+    }
+    
+    const recipe = state.recipes.find(r => r.id === productId);
+    if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
+      recipe.ingredients.forEach(ing => {
+        addRecipeIngredientRow(ing.supplyId, ing.qty);
+      });
+    } else {
+      addRecipeIngredientRow();
+    }
+    
+    dom.recipeModal.style.display = 'flex';
+    void dom.recipeModal.offsetWidth;
+    dom.recipeModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeRecipeModal() {
+    if (dom.recipeModal) {
+      dom.recipeModal.classList.remove('active');
+      setTimeout(() => {
+        dom.recipeModal.style.display = 'none';
+        document.body.style.overflow = '';
+        state.selectedRecipeProductId = null;
+      }, 300);
+    }
+  }
+
+  function addRecipeIngredientRow(supplyId = '', qty = '') {
+    if (!dom.recipeIngredientsTableBody) return;
+    
+    const rowId = 'rec-row-' + Date.now() + '-' + Math.round(Math.random()*1000);
+    const row = document.createElement('tr');
+    row.id = rowId;
+    row.className = 'recipe-ingredient-row';
+    
+    let selectOptions = '<option value="">-- Seleccionar Insumo --</option>';
+    state.inventory.forEach(item => {
+      selectOptions += `<option value="${item.id}" ${item.id === supplyId ? 'selected' : ''}>${item.name}</option>`;
+    });
+    
+    let unitLabel = 'u.';
+    if (supplyId) {
+      const supply = state.inventory.find(i => i.id === supplyId);
+      if (supply) unitLabel = supply.unit || 'unidades';
+    }
+    
+    row.innerHTML = `
+      <td>
+        <select class="rec-ing-select" style="width:100%; font-size:0.8rem; padding:4px;" required>
+          ${selectOptions}
+        </select>
+      </td>
+      <td>
+        <input type="number" class="rec-ing-qty" value="${qty}" min="0.001" step="any" placeholder="Ej: 200" style="width:100%; font-size:0.8rem; padding:4px; text-align:center;" required>
+      </td>
+      <td>
+        <span class="rec-ing-unit" style="font-size:0.8rem; color:var(--text-secondary); font-weight:600; padding: 0 4px;">${unitLabel}</span>
+      </td>
+      <td style="text-align:center;">
+        <button type="button" class="btn-delete-rec-row" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:1.15rem; padding:0; line-height:1;">×</button>
+      </td>
+    `;
+    
+    dom.recipeIngredientsTableBody.appendChild(row);
+    
+    const select = row.querySelector('.rec-ing-select');
+    const unitSpan = row.querySelector('.rec-ing-unit');
+    
+    select.addEventListener('change', (e) => {
+      const val = e.target.value;
+      const supply = state.inventory.find(i => i.id === val);
+      unitSpan.textContent = supply ? (supply.unit || 'unidades') : 'u.';
+    });
+    
+    row.querySelector('.btn-delete-rec-row').addEventListener('click', () => {
+      row.remove();
+      if (dom.recipeIngredientsTableBody.querySelectorAll('.recipe-ingredient-row').length === 0) {
+        addRecipeIngredientRow();
+      }
+    });
+  }
+
+  async function saveRecipe() {
+    if (!state.selectedRecipeProductId) return;
+    
+    const rows = dom.recipeIngredientsTableBody.querySelectorAll('.recipe-ingredient-row');
+    const ingredients = [];
+    
+    let hasError = false;
+    rows.forEach(row => {
+      const supplyId = row.querySelector('.rec-ing-select').value;
+      const qty = parseFloat(row.querySelector('.rec-ing-qty').value) || 0;
+      
+      if (supplyId) {
+        if (qty <= 0) {
+          hasError = true;
+        } else {
+          ingredients.push({
+            supplyId: supplyId,
+            qty: qty
+          });
+        }
+      }
+    });
+    
+    if (hasError) {
+      alert('Por favor ingresa cantidades válidas (mayores a cero) para todos los ingredientes seleccionados.');
+      return;
+    }
+    
+    const productId = state.selectedRecipeProductId;
+    
+    const btn = dom.btnRecipeSave;
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+    
+    const recipeData = {
+      ingredients: ingredients,
+      updatedAt: new Date()
+    };
+    
+    try {
+      if (firebaseReady && db && state.firestoreModule) {
+        const { doc, setDoc } = state.firestoreModule;
+        await setDoc(doc(db, 'recipes', productId), recipeData, { merge: true });
+      }
+      
+      const existingIndex = state.recipes.findIndex(r => r.id === productId);
+      if (existingIndex > -1) {
+        state.recipes[existingIndex] = { id: productId, ...recipeData };
+      } else {
+        state.recipes.push({ id: productId, ...recipeData });
+      }
+      
+      renderRecipesList();
+      closeRecipeModal();
+      alert('Receta guardada con éxito.');
+    } catch (err) {
+      console.error('Error saving recipe:', err);
+      alert('Error al guardar la receta. Intenta nuevamente.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar Receta';
+    }
+  }
+
+  async function deductIngredientsForOrder(order) {
+    if (!firebaseReady || !db || !state.firestoreModule) return;
+    const { doc, setDoc } = state.firestoreModule;
+    
+    if (!order.items || !Array.isArray(order.items)) return;
+    
+    for (const item of order.items) {
+      const itemId = item.id;
+      const quantity = parseInt(item.quantity) || 1;
+      
+      const recipe = state.recipes.find(r => r.id === itemId);
+      if (!recipe || !recipe.ingredients) continue;
+      
+      for (const ing of recipe.ingredients) {
+        const supplyId = ing.supplyId;
+        const useQty = parseFloat(ing.qty) * quantity;
+        
+        const supplyIndex = state.inventory.findIndex(i => i.id === supplyId);
+        if (supplyIndex > -1) {
+          const supply = state.inventory[supplyIndex];
+          const newStock = Math.max(0, parseFloat(supply.stock || 0) - useQty);
+          
+          supply.stock = newStock;
+          supply.updatedAt = formatDateYMD(new Date());
+          
+          const supplyRef = doc(db, 'supplies_inventory', supplyId);
+          await setDoc(supplyRef, { stock: newStock, updatedAt: supply.updatedAt }, { merge: true });
+        }
+      }
+    }
+    
+    renderInventoryTable();
+    runAiAccountantAudit();
+  }
+
+  function deductDemoIngredientsForOrder(order) {
+    if (!order.items || !Array.isArray(order.items)) return;
+    
+    for (const item of order.items) {
+      const itemId = item.id;
+      const quantity = parseInt(item.quantity) || 1;
+      
+      const recipe = state.recipes.find(r => r.id === itemId);
+      if (!recipe || !recipe.ingredients) continue;
+      
+      for (const ing of recipe.ingredients) {
+        const supplyId = ing.supplyId;
+        const useQty = parseFloat(ing.qty) * quantity;
+        
+        const supplyIndex = state.inventory.findIndex(i => i.id === supplyId);
+        if (supplyIndex > -1) {
+          const supply = state.inventory[supplyIndex];
+          supply.stock = Math.max(0, parseFloat(supply.stock || 0) - useQty);
+          supply.updatedAt = formatDateYMD(new Date());
+        }
+      }
+    }
+    
+    renderInventoryTable();
+    runAiAccountantAudit();
   }
 
 })();
