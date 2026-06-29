@@ -151,6 +151,7 @@
     expProvider: $('#expProvider'),
     expDetail: $('#expDetail'),
     expAmount: $('#expAmount'),
+    expAffectsInventory: $('#expAffectsInventory'),
     btnCancelExpense: $('#btnCancelExpense'),
     btnSaveExpense: $('#btnSaveExpense'),
     expensesTableBody: $('#expensesTableBody'),
@@ -1128,7 +1129,8 @@
         }
         
         const items = getExpenseItemsList();
-        saveExpense(date, provider, detail, amount, items);
+        const affectsInventory = dom.expAffectsInventory ? dom.expAffectsInventory.checked : true;
+        saveExpense(date, provider, detail, amount, items, affectsInventory);
       });
     }
 
@@ -1960,7 +1962,7 @@
   // ============================================
   // EXPENSES MANAGEMENT
   // ============================================
-  async function saveExpense(date, provider, detail, amount, items = []) {
+  async function saveExpense(date, provider, detail, amount, items = [], affectsInventory = true) {
     let imageUrl = '';
     
     if (state.currentReceiptFile && firebaseReady && db && state.firestoreModule) {
@@ -1985,6 +1987,7 @@
       amount: parseInt(amount) || 0,
       items: items,
       imageUrl: imageUrl,
+      affectsInventory: affectsInventory,
       createdAt: new Date()
     };
 
@@ -1996,16 +1999,22 @@
           id: docRef.id,
           ...expData
         });
-        await saveSuppliesFromExpense(items, date);
+        if (affectsInventory) {
+          await saveSuppliesFromExpense(items, date);
+        }
       } catch (err) {
         console.error('Error saving expense to Firestore:', err);
         alert('Error al conectar con la base de datos, se guardará localmente.');
         state.expenses.unshift({ id: 'local-' + Date.now(), ...expData });
-        saveDemoSuppliesFromExpense(items, date);
+        if (affectsInventory) {
+          saveDemoSuppliesFromExpense(items, date);
+        }
       }
     } else {
       state.expenses.unshift({ id: 'demo-' + Date.now(), ...expData });
-      saveDemoSuppliesFromExpense(items, date);
+      if (affectsInventory) {
+        saveDemoSuppliesFromExpense(items, date);
+      }
     }
 
     renderExpensesTable();
@@ -2093,6 +2102,9 @@
     dom.expProvider.value = '';
     dom.expDetail.value = '';
     dom.expAmount.value = '';
+    if (dom.expAffectsInventory) {
+      dom.expAffectsInventory.checked = true;
+    }
     state.currentReceiptFile = null;
     state.currentReceiptBase64 = null;
     if (dom.expenseItemsTableBody) {
@@ -2697,9 +2709,33 @@
 
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
+    const dateMatch = text.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
+    if (dateMatch) {
+      res.date = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+    } else {
+      const dateMatchIso = text.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
+      if (dateMatchIso) {
+        res.date = `${dateMatchIso[1]}-${dateMatchIso[2]}-${dateMatchIso[3]}`;
+      }
+    }
+
+    const providerCandidates = [];
+    const ignoreProviderRegex = /boleta|factura|electronica|r\.u\.t|rut|giro|fecha|nro|telefono|tel|cel|cliente|vendedor|caja/i;
+    for (let i = 0; i < Math.min(6, lines.length); i++) {
+      const line = lines[i];
+      if (!ignoreProviderRegex.test(line) && line.length > 3 && line.length < 35 && !/\d{2,}/.test(line)) {
+        providerCandidates.push(line);
+      }
+    }
+    if (providerCandidates.length > 0) {
+      res.provider = providerCandidates[0];
+    } else {
+      res.provider = ''; // Clear provider if not found instead of inventing
+    }
+
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i].toLowerCase();
-      if (line.includes('total') || line.includes('pagar') || line.includes('neto') || line.includes('monto') || line.includes('$')) {
+      if ((line.includes('total') || line.includes('pagar') || line.includes('neto') || line.includes('monto')) && !line.includes('subtotal') && !line.includes('descuento')) {
         const match = lines[i].replace(/[^\d]/g, '');
         if (match.length >= 3 && match.length <= 8) {
           res.amount = parseInt(match);
@@ -2715,57 +2751,32 @@
           .map(num => parseInt(num.replace(/[.,]/g, '')))
           .filter(val => val >= 1000 && val < 500000);
         if (candidates.length > 0) {
-          res.amount = candidates[candidates.length - 1];
+          res.amount = Math.max(...candidates);
         }
       }
-    }
-
-    const dateMatch = text.match(/(\d{2})[-/](\d{2})[-/](\d{4})/);
-    if (dateMatch) {
-      res.date = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
-    } else {
-      const dateMatchIso = text.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
-      if (dateMatchIso) {
-        res.date = `${dateMatchIso[1]}-${dateMatchIso[2]}-${dateMatchIso[3]}`;
-      }
-    }
-
-    const providerCandidates = [];
-    for (let i = 0; i < Math.min(5, lines.length); i++) {
-      const line = lines[i];
-      const isBoilerplate = /boleta|factura|electronica|r\.u\.t|rut|giro|fecha|nro|telefono|tel|cel/i.test(line);
-      if (!isBoilerplate && line.length > 3 && line.length < 25) {
-        providerCandidates.push(line);
-      }
-    }
-    if (providerCandidates.length > 0) {
-      res.provider = providerCandidates[0];
-    } else {
-      res.provider = 'Distribuidora Lomas';
     }
 
     return res;
   }
 
   function fallbackToSimulatedOcr(file) {
-    updateOcrProgress('Leyendo metadatos de la imagen...', 25);
+    updateOcrProgress('Procesando archivo de boleta...', 50);
     setTimeout(() => {
-      updateOcrProgress('Escaneando líneas de texto...', 55);
-      setTimeout(() => {
-        updateOcrProgress('Extrayendo total y RUT del proveedor...', 85);
-        setTimeout(() => {
-          dom.expDate.value = formatDateYMD(new Date());
-          dom.expProvider.value = 'Mayorista Alvi / CCU';
-          dom.expDetail.value = 'Compra de Bebidas y Licores';
-          
-          const mockAmount = Math.round((Math.random() * 80000 + 15000) / 100) * 100;
-          dom.expAmount.value = mockAmount;
+      // Clear fields to let user fill manually, do NOT invent data.
+      dom.expDate.value = formatDateYMD(new Date());
+      dom.expProvider.value = '';
+      dom.expDetail.value = '';
+      dom.expAmount.value = '';
+      if (dom.expenseItemsTableBody) {
+        dom.expenseItemsTableBody.innerHTML = '';
+        renderExpenseItemsTable();
+      }
 
-          dom.ocrProgressContainer.style.display = 'none';
-          dom.expenseForm.style.display = 'block';
-        }, 600);
-      }, 600);
-    }, 600);
+      dom.ocrProgressContainer.style.display = 'none';
+      dom.expenseForm.style.display = 'block';
+
+      alert('No se pudo extraer el texto de la boleta automáticamente. Por favor, completa los datos de la compra manualmente.');
+    }, 1000);
   }
 
   function formatDateYMD(date) {
@@ -3172,49 +3183,59 @@
 
   function parseOCRLineItems(text) {
     const items = [];
-    const lines = text.split('\n');
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     
-    // Pattern like "3 X 1L GIN BOOLTON ROYAL $4.590 C/U" or "3 X GIN BOOLTON $4590"
-    const regex = /(\d+)\s*[xX]\s*([^$0-9\n]+)(?:\$?|\s*)\s*([\d.,]+)/;
-
+    const ignoreRegex = /total|subtotal|neto|iva|exento|rut|giro|efectivo|tarjeta|debito|visa|redcompra|mastercard|vuelto|cambio|fecha|nro|boleta|factura|descuento|dcto|promo|pago|saldo|atendido|cajero/i;
+    
     lines.forEach(line => {
-      const match = line.match(regex);
-      if (match) {
-        const qty = parseFloat(match[1]);
-        let name = match[2].trim()
-          .replace(/c\/u|cu|unitario|unit|val|tot/gi, '')
-          .replace(/[-_.*]/g, '')
-          .trim();
-        let priceRaw = match[3].replace(/[.,]/g, '');
-        const price = parseInt(priceRaw) || 0;
-        
+      if (ignoreRegex.test(line) || /\d{2}[:/]\d{2}/.test(line)) return;
+      
+      // Pattern 1: [Qty] x [Name] [Price] (e.g. "3 x Pisco Alto 9990" or "6 X Insumos $7000")
+      const matchX = line.match(/^(\d+)\s*[xX*]\s*([^$0-9]+)(?:\$?|\s*)\s*([\d.,]+)/);
+      if (matchX) {
+        const qty = parseFloat(matchX[1]);
+        const name = matchX[2].trim().replace(/c\/u|cu|unitario|unit|val|tot/gi, '').replace(/[-_.*]/g, '').trim();
+        const price = parseInt(matchX[3].replace(/[.,]/g, '')) || 0;
         if (qty > 0 && name.length > 2 && price > 0) {
-          items.push({
-            name: name,
-            qty: qty,
-            price: price
-          });
+          items.push({ name, qty, price });
+          return;
+        }
+      }
+      
+      // Pattern 2: [Name] [Qty] [Price] (e.g. "Cerveza Escudo Silver 6 7000")
+      const matchEnd = line.match(/^([^$0-9]+)\s+(\d+)\s+(?:\$?|\s*)\s*([\d.,]+)$/);
+      if (matchEnd) {
+        const name = matchEnd[1].trim().replace(/c\/u|cu|unitario|unit|val|tot/gi, '').replace(/[-_.*]/g, '').trim();
+        const qty = parseFloat(matchEnd[2]);
+        const price = parseInt(matchEnd[3].replace(/[.,]/g, '')) || 0;
+        if (qty > 0 && name.length > 2 && price > 0) {
+          items.push({ name, qty, price });
+          return;
+        }
+      }
+      
+      // Pattern 3: [Qty] [Name] [Price] (e.g. "3 Pisco Alto 9990")
+      const matchStart = line.match(/^(\d+)\s+([^$0-9]+)(?:\$?|\s*)\s*([\d.,]+)$/);
+      if (matchStart) {
+        const qty = parseFloat(matchStart[1]);
+        const name = matchStart[2].trim().replace(/c\/u|cu|unitario|unit|val|tot/gi, '').replace(/[-_.*]/g, '').trim();
+        const price = parseInt(matchStart[3].replace(/[.,]/g, '')) || 0;
+        if (qty > 0 && name.length > 2 && price > 0) {
+          items.push({ name, qty, price });
+          return;
+        }
+      }
+
+      // Pattern 4: [Name] $ [Price] (e.g. "Coca Cola 1.5L $1500" -> qty 1)
+      const matchDollar = line.match(/^([^$0-9]+)(?:\$|\s\$)\s*([\d.,]+)/);
+      if (matchDollar) {
+        const name = matchDollar[1].trim().replace(/c\/u|cu|unitario|unit|val|tot/gi, '').replace(/[-_.*]/g, '').trim();
+        const price = parseInt(matchDollar[2].replace(/[.,]/g, '')) || 0;
+        if (name.length > 2 && price > 100) {
+          items.push({ name, qty: 1, price });
         }
       }
     });
-
-    if (items.length === 0) {
-      lines.forEach(line => {
-        const parts = line.split(/[$]/);
-        if (parts.length > 1) {
-          const namePart = parts[0].trim().replace(/\d+$/, '').trim();
-          const pricePart = parts[1].replace(/[^\d]/g, '');
-          const price = parseInt(pricePart) || 0;
-          if (namePart.length > 3 && price > 100) {
-            items.push({
-              name: namePart,
-              qty: 1,
-              price: price
-            });
-          }
-        }
-      });
-    }
 
     return items;
   }
