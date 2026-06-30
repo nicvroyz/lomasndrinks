@@ -3476,8 +3476,11 @@
 
     // --- 2. Helpers (noise-tolerant) ---
     // Extract all numbers from a line (handles Chilean 4.590 / 13.770 format)
+    // Also merges numbers split by spaces: OCR reads "5.940" as "5 940"
     function extractNums(line) {
-      const matches = line.match(/\d[\d.,]*\d|\d+/g) || [];
+      // Pre-merge: "5 940" → "5940", "10 320" → "10320", "13 770" → "13770"
+      const merged = line.replace(/(\d{1,3})\s+(\d{3})(?!\d)/g, '$1$2');
+      const matches = merged.match(/\d[\d.,]*\d|\d+/g) || [];
       return matches.map(m => parseInt(m.replace(/[.,]/g, '')) || 0).filter(n => n > 0);
     }
 
@@ -3508,6 +3511,7 @@
         if (/^\d+$/.test(w)) return true;                       // keep standalone numbers (sizes)
         if (/^[A-ZÁÉÍÓÚÑ]{2}$/.test(w)) return true;           // keep 2-char uppercase (CG, OZ)
         if (/^[xX]$/.test(w)) return true;                      // keep "x" (multiplier)
+        if (/^[xX]\d+$/.test(w)) return true;                   // keep "x6", "x10" (pack size)
         if (/^\d+[A-Za-z]+$/.test(w)) return true;              // keep "1L", "6L", "1Kg"
         return false;
       });
@@ -3536,7 +3540,8 @@
         // Try to find leading quantity digit
         const qtyMatch = cleaned.match(/^(\d{1,2})\s+([A-Za-záéíóúñÁÉÍÓÚÑ].*)/);
         if (qtyMatch && qtyMatch[2].length > 2) {
-          pending = { name: qtyMatch[2].trim(), qty: parseInt(qtyMatch[1]) };
+          const parsedQty = parseInt(qtyMatch[1]);
+          pending = { name: qtyMatch[2].trim(), qty: parsedQty >= 1 ? parsedQty : 1 };
         } else {
           pending = { name: cleaned, qty: 1 };
         }
