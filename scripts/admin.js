@@ -2756,10 +2756,15 @@
         throw new Error('La librería Tesseract.js no se cargó correctamente. Usando simulación inteligente.');
       }
 
+      updateOcrProgress('Preprocesando imagen para mejor lectura...', 15);
+
+      // Preprocess: convert to high-contrast B&W to remove stamp/seal noise
+      const preprocessed = await preprocessReceiptImage(file);
+      
       updateOcrProgress('Inicializando Tesseract (Español)...', 25);
       
       Tesseract.recognize(
-        file,
+        preprocessed,
         'spa',
         { 
           logger: m => {
@@ -2812,6 +2817,92 @@
     if (dom.ocrStatusTitle) dom.ocrStatusTitle.textContent = title;
     if (dom.ocrProgressBarFill) dom.ocrProgressBarFill.style.width = `${pct}%`;
     if (dom.ocrStatusPct) dom.ocrStatusPct.textContent = `${pct}%`;
+  }
+
+  // Preprocess receipt image: convert to high-contrast B&W to remove stamp/seal noise
+  function preprocessReceiptImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Scale down if very large (improves OCR speed without losing quality)
+        let w = img.width;
+        let h = img.height;
+        const maxDim = 2000;
+        if (w > maxDim || h > maxDim) {
+          const scale = maxDim / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        canvas.width = w;
+        canvas.height = h;
+        
+        ctx.drawImage(img, 0, 0, w, h);
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        
+        // Step 1: Convert to grayscale with emphasis on dark ink
+        // Blue/light colors (stamps) become lighter, black text stays dark
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i+1], b = data[i+2];
+          
+          // Detect and remove blue/cyan stamp colors
+          // Blue stamps have high blue channel relative to others
+          const isBlueish = (b > 100 && b > r * 1.2 && b > g * 1.1);
+          const isCyanish = (b > 100 && g > 100 && r < 150 && (b + g) > r * 2.5);
+          
+          if (isBlueish || isCyanish) {
+            // Make stamp areas white
+            data[i] = data[i+1] = data[i+2] = 255;
+          } else {
+            // Standard grayscale for everything else
+            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+            data[i] = data[i+1] = data[i+2] = gray;
+          }
+        }
+        
+        // Step 2: Increase contrast (make darks darker, lights lighter)
+        const contrast = 80; // strong contrast boost
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+        for (let i = 0; i < data.length; i += 4) {
+          data[i]   = Math.max(0, Math.min(255, Math.round(factor * (data[i] - 128) + 128)));
+          data[i+1] = Math.max(0, Math.min(255, Math.round(factor * (data[i+1] - 128) + 128)));
+          data[i+2] = Math.max(0, Math.min(255, Math.round(factor * (data[i+2] - 128) + 128)));
+        }
+        
+        // Step 3: Adaptive threshold - make it pure black & white
+        const threshold = 140;
+        for (let i = 0; i < data.length; i += 4) {
+          const val = data[i] < threshold ? 0 : 255;
+          data[i] = data[i+1] = data[i+2] = val;
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        console.log('[OCR Preprocess] Image converted to B&W:', w, 'x', h);
+        
+        // Return as blob for Tesseract
+        canvas.toBlob(blob => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            console.warn('[OCR Preprocess] Canvas toBlob failed, using original file');
+            resolve(file);
+          }
+        }, 'image/png');
+      };
+      
+      img.onerror = () => {
+        console.warn('[OCR Preprocess] Image load failed, using original file');
+        resolve(file);
+      };
+      
+      // Load from file
+      const url = URL.createObjectURL(file);
+      img.src = url;
+    });
   }
 
   function parseReceiptText(text) {
