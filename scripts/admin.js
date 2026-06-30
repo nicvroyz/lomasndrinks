@@ -3402,12 +3402,25 @@
       return /[A-Za-záéíóúñÁÉÍÓÚÑ]{4,}/.test(line);
     }
 
-    // Clean a name line: remove symbols, keep product text
+    // Clean a name line: aggressively strip OCR noise, keep product text
     function cleanName(line) {
-      return line
-        .replace(/[<>—–=\[\]{}°€£¿?!|\\*#@^~`"]+/g, ' ')
+      let c = line
+        .replace(/[<>—–=\[\]{}°€£¿?!|\\*#@^~`"(),]+/g, ' ')  // remove symbol noise
+        .replace(/[.$,;:]+/g, ' ')                               // remove punctuation noise
         .replace(/\s{2,}/g, ' ')
         .trim();
+      // Remove isolated 1-2 letter lowercase fragments (OCR noise like "e", "ad", "Ll", "MN")
+      // but keep uppercase abbreviations that could be real (CG, OZ, UN, ML, GR, KG, LD)
+      const words = c.split(/\s+/);
+      const kept = words.filter(w => {
+        if (w.length >= 3) return true;                         // keep 3+ char words
+        if (/^\d+$/.test(w)) return true;                       // keep standalone numbers (sizes)
+        if (/^[A-ZÁÉÍÓÚÑ]{2}$/.test(w)) return true;           // keep 2-char uppercase (CG, OZ)
+        if (/^[xX]$/.test(w)) return true;                      // keep "x" (multiplier)
+        if (/^\d+[A-Za-z]+$/.test(w)) return true;              // keep "1L", "6L", "1Kg"
+        return false;
+      });
+      return kept.join(' ').trim();
     }
 
     // --- 3. Noise-tolerant multi-line parsing ---
