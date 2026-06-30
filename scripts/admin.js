@@ -3552,13 +3552,16 @@
         let qty = pending.qty;
 
         if (bigNums.length >= 2) {
-          unitPrice = bigNums[0];
-          const total = bigNums[bigNums.length - 1];
-          // Infer quantity from total/unitPrice ratio
+          // The SMALLER number is always unit price, LARGER is line total
+          const sorted = [...bigNums].sort((a, b) => a - b);
+          unitPrice = sorted[0];           // smallest = unit price
+          const lineTotal = sorted[sorted.length - 1]; // largest = line total
+          
+          // Infer quantity from total / unitPrice
           if (unitPrice > 0) {
-            const inferredQty = Math.round(total / unitPrice);
+            const inferredQty = Math.round(lineTotal / unitPrice);
             if (inferredQty >= 1 && inferredQty <= 999 &&
-                Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+                Math.abs(lineTotal - unitPrice * inferredQty) < unitPrice * 0.15) {
               qty = inferredQty;
             }
           }
@@ -3570,11 +3573,12 @@
         if (nums.length >= 3) {
           const smallNums = nums.filter(n => n >= 1 && n < 100);
           if (smallNums.length > 0 && bigNums.length >= 2) {
-            // Verify: does small * first big ≈ last big?
+            const sorted = [...bigNums].sort((a, b) => a - b);
             const sn = smallNums[0];
-            const total = bigNums[bigNums.length - 1];
-            if (Math.abs(total - bigNums[0] * sn) < bigNums[0] * 0.15) {
+            const lineTotal = sorted[sorted.length - 1];
+            if (Math.abs(lineTotal - sorted[0] * sn) < sorted[0] * 0.15) {
               qty = sn;
+              unitPrice = sorted[0];
             }
           }
         }
@@ -3596,13 +3600,14 @@
         const namePart = cleaned.replace(/\d[\d.,]*\d|\d+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
         if (namePart.length > 2 && bigNums.length > 0) {
-          let unitPrice = bigNums[0];
+          const sorted = [...bigNums].sort((a, b) => a - b);
+          let unitPrice = sorted[0];
           let qty = 1;
-          if (bigNums.length >= 2) {
-            const total = bigNums[bigNums.length - 1];
-            const inferredQty = Math.round(total / unitPrice);
+          if (sorted.length >= 2) {
+            const lineTotal = sorted[sorted.length - 1];
+            const inferredQty = Math.round(lineTotal / unitPrice);
             if (inferredQty >= 1 && inferredQty <= 999 &&
-                Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+                Math.abs(lineTotal - unitPrice * inferredQty) < unitPrice * 0.15) {
               qty = inferredQty;
             }
           }
@@ -3610,15 +3615,15 @@
           pending = null;
         } else if (pending) {
           // This might be a price line with some noise words
-          const bNums = bigNums;
-          if (bNums.length >= 1) {
-            let unitPrice = bNums[0];
+          if (bigNums.length >= 1) {
+            const sorted = [...bigNums].sort((a, b) => a - b);
+            let unitPrice = sorted[0];
             let qty = pending.qty;
-            if (bNums.length >= 2) {
-              const total = bNums[bNums.length - 1];
-              const inferredQty = Math.round(total / unitPrice);
+            if (sorted.length >= 2) {
+              const lineTotal = sorted[sorted.length - 1];
+              const inferredQty = Math.round(lineTotal / unitPrice);
               if (inferredQty >= 1 && inferredQty <= 999 &&
-                  Math.abs(total - unitPrice * inferredQty) < unitPrice * 0.15) {
+                  Math.abs(lineTotal - unitPrice * inferredQty) < unitPrice * 0.15) {
                 qty = inferredQty;
               }
             }
