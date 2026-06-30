@@ -3114,19 +3114,53 @@
     }
   }
 
+  function findClosestSupply(itemName) {
+    if (!state.inventory || state.inventory.length === 0) return null;
+    
+    const clean = (s) => s.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+      
+    const itemWords = clean(itemName);
+    if (itemWords.length === 0) return null;
+    
+    let bestMatch = null;
+    let maxOverlap = 0;
+    
+    for (const supply of state.inventory) {
+      const supplyWords = clean(supply.name);
+      let overlap = 0;
+      for (const w of itemWords) {
+        if (supplyWords.includes(w)) overlap++;
+      }
+      if (overlap > maxOverlap) {
+        maxOverlap = overlap;
+        bestMatch = supply;
+      }
+    }
+    
+    if (maxOverlap >= 1) {
+      return bestMatch;
+    }
+    return null;
+  }
+
   async function saveSuppliesFromExpense(items, date) {
     if (!firebaseReady || !db || !state.firestoreModule) return;
     const { doc, getDoc, setDoc } = state.firestoreModule;
 
     for (const item of items) {
-      const normalizedId = item.name.toLowerCase()
+      const matchedSupply = findClosestSupply(item.name);
+      const targetId = matchedSupply ? matchedSupply.id : item.name.toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
         
-      if (!normalizedId) continue;
+      if (!targetId) continue;
       
-      const docRef = doc(db, 'supplies_inventory', normalizedId);
+      const docRef = doc(db, 'supplies_inventory', targetId);
       const docSnap = await getDoc(docRef);
       
       let currentStock = 0;
@@ -3140,6 +3174,12 @@
         currentCost = parseFloat(data.cost || 0);
         capacity = parseFloat(data.capacity || 1) || 1;
         unit = data.unit || 'unidades';
+      } else if (matchedSupply) {
+        // Fallback to local matched state if document snapshot doesn't exist yet but matched in state
+        currentStock = parseFloat(matchedSupply.stock || 0);
+        currentCost = parseFloat(matchedSupply.cost || 0);
+        capacity = parseFloat(matchedSupply.capacity || 1) || 1;
+        unit = matchedSupply.unit || 'unidades';
       }
       
       const purchasedUnits = parseFloat(item.qty) || 0;
@@ -3156,7 +3196,7 @@
       }
       
       const supplyData = {
-        name: docSnap.exists() ? docSnap.data().name : item.name,
+        name: docSnap.exists() ? docSnap.data().name : (matchedSupply ? matchedSupply.name : item.name),
         stock: newStock,
         cost: Math.round(newCost),
         unit: unit,
@@ -3166,11 +3206,11 @@
       
       await setDoc(docRef, supplyData, { merge: true });
       
-      const localItemIndex = state.inventory.findIndex(i => i.id === normalizedId);
+      const localItemIndex = state.inventory.findIndex(i => i.id === targetId);
       if (localItemIndex > -1) {
-        state.inventory[localItemIndex] = { id: normalizedId, ...supplyData };
+        state.inventory[localItemIndex] = { id: targetId, ...supplyData };
       } else {
-        state.inventory.push({ id: normalizedId, ...supplyData });
+        state.inventory.push({ id: targetId, ...supplyData });
       }
     }
     
@@ -3181,19 +3221,20 @@
 
   function saveDemoSuppliesFromExpense(items, date) {
     for (const item of items) {
-      const normalizedId = item.name.toLowerCase()
+      const matchedSupply = findClosestSupply(item.name);
+      const targetId = matchedSupply ? matchedSupply.id : item.name.toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
         
-      if (!normalizedId) continue;
+      if (!targetId) continue;
       
-      const localItemIndex = state.inventory.findIndex(i => i.id === normalizedId);
+      const localItemIndex = state.inventory.findIndex(i => i.id === targetId);
       let currentStock = 0;
       let currentCost = 0;
       let capacity = 1;
       let unit = 'unidades';
-      let name = item.name;
+      let name = matchedSupply ? matchedSupply.name : item.name;
       
       if (localItemIndex > -1) {
         const existing = state.inventory[localItemIndex];
@@ -3227,9 +3268,9 @@
       };
       
       if (localItemIndex > -1) {
-        state.inventory[localItemIndex] = { id: normalizedId, ...supplyData };
+        state.inventory[localItemIndex] = { id: targetId, ...supplyData };
       } else {
-        state.inventory.push({ id: normalizedId, ...supplyData });
+        state.inventory.push({ id: targetId, ...supplyData });
       }
     }
     
